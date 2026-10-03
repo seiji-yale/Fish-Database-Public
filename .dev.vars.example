@@ -1,0 +1,3 @@
+# Copy to `.dev.vars` (git-ignored) for local `wrangler dev`. Never commit real values.
+# Local-only key; production and preview keys are Cloudflare secrets (docs/06-operations.md section 3).
+SESSION_SIGNING_KEY=local-dev-only-change-me

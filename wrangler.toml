@@ -1,0 +1,110 @@
+# Free-tier rule (NFR-08): no kv_namespaces, durable_objects, queues, routes. See `npm run check:free-tier`.
+# Wrangler does not inherit bindings or [assets] into [env.*], so each environment repeats them.
+name = "fish-database"
+main = "worker/index.ts"
+compatibility_date = "2026-09-01"
+
+[assets]
+directory = "./app/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+# Local development only (`wrangler dev`, `npm run db:migrate:local`): a throwaway SQLite file under
+# .wrangler/state. The id is a placeholder; this binding never reaches Cloudflare.
+[[d1_databases]]
+binding = "DB"
+database_name = "fish-local"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "worker/db/migrations"
+
+# Local development only: a throwaway simulated bucket (files live under .wrangler/state).
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "fish-local-files"
+
+# --- preview: separate test environment ---
+# Deploy: `npm run build && npx wrangler deploy --env preview`
+[env.preview]
+name = "your-preview-worker"
+workers_dev = true
+# PR branches get per-version preview URLs (Workers Builds: `npx wrangler versions upload --env preview`).
+preview_urls = true
+
+[env.preview.assets]
+directory = "./app/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+# The Dropbox mirror runs from this minute cron (T-020); it does nothing until the Dropbox secrets are set.
+[env.preview.triggers]
+crons = ["* * * * *"]
+
+# Preview writes its Dropbox copy under /preview so it never mixes with the lab's copy (same app folder).
+[env.preview.vars]
+MIRROR_FOLDER = "/preview"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "your-preview-db"
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "worker/db/migrations"
+
+[[env.preview.r2_buckets]]
+binding = "FILES"
+bucket_name = "your-preview-files"
+
+# --- production: configure a private deployment name before use ---
+# Deploy: `npm run build && npx wrangler deploy --env production`
+[env.production]
+name = "your-production-worker"
+workers_dev = true
+# No preview URLs on production: they would expose production data at extra URLs.
+preview_urls = false
+
+[env.production.assets]
+directory = "./app/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[env.production.triggers]
+crons = ["* * * * *"]
+
+[env.production.vars]
+MIRROR_FOLDER = "/"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "your-production-db"
+database_id = "00000000-0000-0000-0000-000000000002"
+migrations_dir = "worker/db/migrations"
+
+[[env.production.r2_buckets]]
+binding = "FILES"
+bucket_name = "your-production-files"
+
+# --- rehearsal: a throwaway copy of production for the rebuild drill (docs/06-operations.md §2.4) ------
+# Never has Dropbox secrets or a cron, so it cannot write into the lab's Dropbox copy. The database id is a
+# placeholder until `npx wrangler d1 create your-rehearsal` prints the real one (replace it below).
+# Deploy: `npm run deploy:rehearsal`. Delete everything when the drill is over (§2.4 step 9).
+[env.rehearsal]
+name = "your-rehearsal"
+workers_dev = true
+preview_urls = false
+
+[env.rehearsal.assets]
+directory = "./app/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[env.rehearsal.vars]
+MIRROR_FOLDER = "/rehearsal"
+
+[[env.rehearsal.d1_databases]]
+binding = "DB"
+database_name = "your-rehearsal"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "worker/db/migrations"
+
+[[env.rehearsal.r2_buckets]]
+binding = "FILES"
+bucket_name = "your-rehearsal-files"

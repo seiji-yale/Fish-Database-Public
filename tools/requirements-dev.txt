@@ -1,0 +1,5 @@
+pytest>=8
+# tools/import (T-004): also the runtime deps in tools/import/requirements.txt, needed here because
+# check:python (pytest) builds synthetic workbooks with openpyxl and reads tools/import/overrides.yaml.
+openpyxl>=3.1
+pyyaml>=6

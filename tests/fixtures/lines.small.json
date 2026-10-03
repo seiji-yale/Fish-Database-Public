@@ -1,0 +1,264 @@
+{
+  "description": "Five synthetic zebrafish lines covering the supported data shapes. All names, dates, sequences, places, and notes are examples.",
+  "lines": [
+    {
+      "id": "fx-demo_c3",
+      "name": "demo_c3",
+      "gene": null,
+      "status": "Current",
+      "dob": "2025-09-15",
+      "ided_number": 9,
+      "last_id_date": "2026-01-08",
+      "notes": null,
+      "legacy_no": 101,
+      "legacy_check": 0,
+      "updated_at": "2026-04-10T16:00:00Z",
+      "phenotypes": [],
+      "attributes": [
+        {
+          "key": "Source",
+          "value": "REPOSITORY A"
+        }
+      ],
+      "protocols": [
+        {
+          "protocol_type": "pcr",
+          "label": "PCR",
+          "fields": {
+            "primer_f_name": "Primer-1",
+            "primer_f_seq": "CGAATACTGCATCTCGCGCGCACACT",
+            "primer_r_name": "PRIMER-2",
+            "primer_r_seq": "GACTGGCTAAGGTGATTCGCTAA",
+            "annealing_c": 60,
+            "expected_band": "174",
+            "cycles": 35
+          },
+          "notes": null
+        }
+      ],
+      "genotyping_records": [
+        {
+          "record_date": "2026-01-08",
+          "positive_count": 9,
+          "notes": "[import] from Mastersheet Ver. 1.1"
+        }
+      ],
+      "cryo_records": [
+        {
+          "cryo_date": null,
+          "place": null,
+          "box_name": null,
+          "cryo_id_start": null,
+          "cryo_id_end": null,
+          "count": null,
+          "details_unknown": 1,
+          "notes": null
+        }
+      ],
+      "references": [
+        {
+          "title": "Example primers.docx"
+        }
+      ]
+    },
+    {
+      "id": "fx-demo_e5",
+      "name": "DEMO_E5",
+      "gene": null,
+      "status": "Closed",
+      "dob": "2023-12-17",
+      "ided_number": 5,
+      "last_id_date": "2024-03-17",
+      "notes": null,
+      "legacy_no": 102,
+      "legacy_check": 0,
+      "updated_at": "2025-09-08T16:00:00Z",
+      "phenotypes": [],
+      "attributes": [
+        {
+          "key": "Source",
+          "value": "REPOSITORY A"
+        }
+      ],
+      "protocols": [
+        {
+          "protocol_type": "pcr_sequence",
+          "label": "PCR + Sequence",
+          "fields": {
+            "primer_f_name": "PRIMER-3",
+            "primer_f_seq": "GAGAAATTGTCCGGGATTTCT",
+            "primer_r_name": "PRIMER-4",
+            "primer_r_seq": "CCAAAGAGATCGTGGGTCAGTCCCA",
+            "annealing_c": 61,
+            "expected_band": "N/A",
+            "cycles": 35,
+            "seq_primer": "PRIMER-3",
+            "guide_seq": null,
+            "expected_mutation": "G125 to T",
+            "seq_result_urls": []
+          },
+          "notes": "[import] PCR condition: 61 / 30 s / 35 Cycle"
+        }
+      ],
+      "genotyping_records": [
+        {
+          "record_date": "2024-03-17",
+          "positive_count": 5,
+          "notes": "[import] from Mastersheet Ver. 1.1"
+        }
+      ],
+      "cryo_records": [
+        {
+          "cryo_date": "2025-09-08",
+          "place": "Demo freezer shelf",
+          "box_name": "Demo cryo box-Bob",
+          "cryo_id_start": "C0605",
+          "cryo_id_end": "C0610",
+          "count": 6,
+          "details_unknown": 0,
+          "notes": null
+        }
+      ],
+      "references": [
+        {
+          "title": "Example primers.docx"
+        }
+      ]
+    },
+    {
+      "id": "fx-demo_b2",
+      "name": "demo_b2",
+      "gene": null,
+      "status": "Current",
+      "dob": "2025-08-20",
+      "ided_number": 4,
+      "last_id_date": "2025-10-03",
+      "notes": null,
+      "legacy_no": 103,
+      "legacy_check": 0,
+      "updated_at": "2025-11-23T17:00:00Z",
+      "phenotypes": [],
+      "attributes": [],
+      "protocols": [
+        {
+          "protocol_type": "fluorescence",
+          "label": "Fluorescence",
+          "fields": {
+            "fluorophore": "GFP",
+            "screening_day": "2",
+            "description": "green fin fluorescence"
+          },
+          "notes": null
+        }
+      ],
+      "genotyping_records": [
+        {
+          "record_date": "2025-10-03",
+          "positive_count": 4,
+          "notes": "[import] from Mastersheet Ver. 1.1"
+        }
+      ],
+      "cryo_records": [],
+      "references": [
+        {
+          "title": "Example microscopy.docx"
+        }
+      ]
+    },
+    {
+      "id": "fx-demo_d4",
+      "name": "demo_d4",
+      "gene": null,
+      "status": "Current",
+      "dob": "2026-01-24",
+      "ided_number": 7,
+      "last_id_date": "2026-04-19",
+      "notes": "Example husbandry note",
+      "legacy_no": 104,
+      "legacy_check": 0,
+      "updated_at": "2026-04-19T16:00:00Z",
+      "phenotypes": [
+        "Short Fins"
+      ],
+      "attributes": [],
+      "protocols": [
+        {
+          "protocol_type": "tails",
+          "label": "Tails",
+          "fields": {},
+          "notes": null
+        }
+      ],
+      "genotyping_records": [
+        {
+          "record_date": "2026-04-19",
+          "positive_count": 7,
+          "notes": "[import] from Mastersheet Ver. 1.1"
+        }
+      ],
+      "cryo_records": [
+        {
+          "cryo_date": "2026-03-09",
+          "place": "Demo freezer shelf",
+          "box_name": "Demo cryo box-Bob",
+          "cryo_id_start": "C0548",
+          "cryo_id_end": "C0551",
+          "count": 4,
+          "details_unknown": 0,
+          "notes": null
+        }
+      ],
+      "references": []
+    },
+    {
+      "id": "fx-demo_a1",
+      "name": "demo_a1",
+      "gene": "demogene5",
+      "status": "Current",
+      "dob": "2026-01-15",
+      "ided_number": 3,
+      "last_id_date": "2026-06-15",
+      "notes": "[import] allele note: 3 bp insertion",
+      "legacy_no": 105,
+      "legacy_check": 0,
+      "updated_at": "2026-06-15T16:00:00Z",
+      "phenotypes": [
+        "Speckled Body"
+      ],
+      "attributes": [],
+      "protocols": [
+        {
+          "protocol_type": "pcr_sequence",
+          "label": "PCR + Sequence",
+          "fields": {
+            "primer_f_name": "Primer-5",
+            "primer_f_seq": "TATGTTCTTTACTAGACGGG",
+            "primer_r_name": "Primer-6",
+            "primer_r_seq": "TTGTCCGTCGCAAGAAACTT",
+            "annealing_c": 60,
+            "expected_band": "300",
+            "cycles": 35,
+            "seq_primer": "Primer-6",
+            "guide_seq": "GATTACCTTGCGCACACACC",
+            "expected_mutation": "AAG > A--",
+            "seq_result_urls": []
+          },
+          "notes": null
+        }
+      ],
+      "genotyping_records": [
+        {
+          "record_date": "2026-06-15",
+          "positive_count": 3,
+          "notes": "[import] from Mastersheet Ver. 1.1"
+        }
+      ],
+      "cryo_records": [],
+      "references": [
+        {
+          "title": "Example protocol.docx"
+        }
+      ]
+    }
+  ]
+}
