@@ -24,6 +24,7 @@ import {
 } from '../linesApi';
 import { getUsers, type SessionUser } from '../session';
 import { strings } from '../strings';
+import { visibleSearchInput } from '../slashShortcut';
 
 interface UrlState {
   view: LineListView;
@@ -350,6 +351,11 @@ export function LinesPage() {
   // (which would restart the debounce timer on every navigation, not just every keystroke).
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // The phone tab bar's Search opens `/lines#search`: put the cursor in the search box.
+  useEffect(() => {
+    if (window.location.hash === '#search') visibleSearchInput()?.focus();
+  }, []);
 
   useEffect(() => {
     function onPopState() {

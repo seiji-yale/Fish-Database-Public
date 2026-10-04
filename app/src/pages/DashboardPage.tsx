@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { HeaderSearch } from '../components/HeaderSearch';
 import { Modal } from '../components/Modal';
 import { EmptyState, Skeleton } from '../components/shared';
 import { formatDate, formatDateTime, formatRelativeTime } from '../dateFormat';
@@ -162,6 +163,7 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
   return (
     <div className="dashboard-page">
       <h1>{strings.dashboard}</h1>
+      <HeaderSearch placement="page" />
       {acting.name === null ? null : (
         <p className="dashboard-hello" data-testid="dashboard-hello">
           <strong>{strings.helloUser(acting.name)}</strong>

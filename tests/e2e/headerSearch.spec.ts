@@ -65,12 +65,16 @@ test.describe('desktop header search', () => {
 test.describe('phone and tablet', () => {
   test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'the header box is desktop-only');
 
-  test('there is no header box; on the Lines page "/" focuses the page box', async ({ page }) => {
+  test('there is no header box; "/" focuses the Dashboard and Lines page boxes', async ({
+    page,
+  }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-    await expect(page.locator('.header-search')).toBeHidden();
+    await expect(page.locator('.app-header .header-search')).toBeHidden();
+    // The Dashboard shows its own box instead (it renders with the Dashboard data).
+    await expect(page.locator('input[data-search-input]:visible')).toHaveCount(1);
     await page.keyboard.press('/');
-    await expect(page.locator('input[data-search-input]:visible')).toHaveCount(0);
+    await expect(page.getByRole('searchbox', { name: 'Search lines' })).toBeFocused();
     await page.goto('/lines');
     await expect(page.getByRole('searchbox', { name: 'Search lines' })).toBeVisible();
     await page.keyboard.press('/');

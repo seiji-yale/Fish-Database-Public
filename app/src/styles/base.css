@@ -48,9 +48,10 @@ a {
 .skip-link:focus {
   top: var(--space-2);
 }
+/* One row at every width: a long app name wraps onto more lines inside the brand instead of pushing
+   the navigation, chat, account and settings controls onto a row of their own. */
 .app-header {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-4);
   padding: var(--space-3) var(--space-4);
@@ -59,10 +60,16 @@ a {
 .app-header--admin {
   background: var(--color-admin);
 }
+.app-header > * {
+  flex: none;
+}
+.app-header > .app-brand {
+  flex: 0 1 auto;
+  min-width: 6rem;
+}
 .app-brand {
-  display: inline-flex;
-  align-items: center;
   margin-right: auto;
+  overflow-wrap: break-word;
   color: var(--color-ink);
   font-weight: 700;
   text-decoration: none;
@@ -75,10 +82,12 @@ a {
 .settings-link {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
 }
 .chat-header-link {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   gap: var(--space-1);
   min-height: 44px;
 }
@@ -749,6 +758,7 @@ a.button--primary:hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .dashboard-page > h1,
+  .dashboard-page > .header-search,
   .dashboard-counters,
   .dashboard-navigation {
     grid-column: 1 / -1;
@@ -778,6 +788,10 @@ a.button--primary:hover {
   }
   .acting-as .user-picker__button {
     flex: 1;
+  }
+  /* The account menu shares the header row with the app name instead of taking a row of its own. */
+  .app-header > .acting-as {
+    width: auto;
   }
   .data-table {
     display: none;
@@ -2311,39 +2325,51 @@ a.button--primary:hover {
   font-family: ui-monospace, monospace;
 }
 
-/* Header search (T-026): on desktop the search lives in the header; below that the Lines page has its own box. */
+/* Header search (T-026): on desktop the search lives in the header; below that the Lines page has its
+   own box and the Dashboard shows the same box in the page (`header-search--page`). */
 .header-search {
+  position: relative;
+}
+.header-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 0 2.5rem 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.header-search__key {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  padding: 0 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.25rem;
+  color: #595959;
+  background: #f4f4f4;
+  font:
+    0.85rem ui-monospace,
+    monospace;
+  pointer-events: none;
+}
+.header-search--header {
   display: none;
 }
+@media (hover: none) {
+  .header-search--page .header-search__key {
+    display: none;
+  }
+  .header-search--page input {
+    padding-right: var(--space-3);
+  }
+}
 @media (min-width: 1024px) {
-  .header-search {
-    position: relative;
+  .app-header > .header-search--header {
     display: block;
     flex: 0 1 18rem;
   }
-  .header-search input {
-    width: 100%;
-    min-width: 0;
-    padding: 0 2.5rem 0 var(--space-3);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-  }
-  .header-search__key {
-    position: absolute;
-    top: 50%;
-    right: var(--space-3);
-    transform: translateY(-50%);
-    padding: 0 0.4rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.25rem;
-    color: #595959;
-    background: #f4f4f4;
-    font:
-      0.85rem ui-monospace,
-      monospace;
-    pointer-events: none;
-  }
-  /* One search box per screen: the header's replaces the Lines page's own box. */
+  /* One search box per screen: the header's replaces the Lines page's and the Dashboard's own box. */
+  .header-search--page,
   .lines-search {
     display: none;
   }
