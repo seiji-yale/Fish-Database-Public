@@ -20,7 +20,8 @@ const navigation = [
   { href: '/', label: strings.dashboard },
   { href: '/lines', label: strings.lines },
   { href: '/lines/new', label: strings.newLine },
-  { href: '/search', label: strings.search },
+  // The phone tab opens Lines with its search box focused (there is no separate search page).
+  { href: '/lines#search', label: strings.search },
 ];
 export function AppShell({ children }: { children: ReactNode }) {
   /** undefined = not read yet; the sign-in page shows when `user` is null. */

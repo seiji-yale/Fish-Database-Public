@@ -2,6 +2,7 @@
  * The search box in the header on desktop (T-026, FR-GLB-05, OQ-33). Enter opens `/lines?q=…`; on the
  * Lines page typing filters live. The URL `q` parameter is the single source of truth, shared with the
  * Lines page's own box (shown on phone and tablet). `/` focuses it from anywhere (`slashShortcut.ts`).
+ * With `placement="page"` the same box sits on the Dashboard below desktop width, where the header has none.
  */
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { strings } from '../strings';
@@ -10,7 +11,7 @@ const onLinesPage = () => window.location.pathname === '/lines';
 const currentQuery = () =>
   onLinesPage() ? (new URLSearchParams(window.location.search).get('q') ?? '') : '';
 
-export function HeaderSearch() {
+export function HeaderSearch({ placement = 'header' }: { placement?: 'header' | 'page' }) {
   const [value, setValue] = useState(currentQuery);
   const timer = useRef<number | undefined>(undefined);
 
@@ -51,7 +52,7 @@ export function HeaderSearch() {
   }
 
   return (
-    <form className="header-search" role="search" onSubmit={submit}>
+    <form className={`header-search header-search--${placement}`} role="search" onSubmit={submit}>
       <input
         type="search"
         data-search-input=""
