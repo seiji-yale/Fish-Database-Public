@@ -3,9 +3,8 @@
  * recognised at a glance (owner request, 2026-10). They only accompany the text, never replace it:
  * every icon is `aria-hidden`, and the label next to it stays the accessible name.
  *
- * One concept, one icon: a counter and the panel it links to (Unread messages, Open requests) use
- * the same one. Drawn here as inline SVG in `currentColor` rather than emoji or an icon package, so
- * they look the same on every device, need no network or dependency, and follow the text colour.
+ * One concept, one icon: each name below is used for exactly one thing on the page. Drawn here as
+ * inline SVG in `currentColor` rather than emoji or an icon package, so they look the same on every device, need no network or dependency, and follow the text colour.
  * The colour comes from the tone: the status colours already used by the status badges for line
  * states, the link blue for everything else.
  */

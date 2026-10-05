@@ -822,7 +822,7 @@ a.button--primary:hover {
 }
 @media (min-width: 640px) {
   .dashboard-counters {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .dashboard-navigation {
     flex-wrap: nowrap;

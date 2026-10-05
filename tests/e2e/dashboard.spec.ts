@@ -141,10 +141,7 @@ test('Recent Activity previews 10 items, expands by 20, and can collapse', async
   await expect(page.getByText('There are no unread messages.')).toBeVisible();
   await expect(page.getByRole('link', { name: '0 unread chat messages' })).toBeVisible();
   await expect(page.locator('.chat-header-badge')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Unread messages 0' })).toHaveAttribute(
-    'href',
-    '#unread-messages',
-  );
+  await expect(page.getByRole('heading', { name: 'Unread messages · 0' })).toBeVisible();
   await expect(page.getByText('Please set up an out-cross.', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open request', exact: true })).toHaveAttribute(
     'href',

@@ -145,6 +145,8 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
       void loadMore();
   }, [data.recentActivity.items.length, activityError, loadMore]);
 
+  // Line counts only: unread messages and open requests change rarely and already show in the
+  // header's Lab Chat badge and in their own panels below (owner request, 2026-10).
   const counters: { icon: DashboardIconName; label: string; value: number; href: string }[] = [
     {
       icon: 'activeLines',
@@ -163,18 +165,6 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
       label: strings.cryopreserved,
       value: data.counters.cryopreserved,
       href: '/lines?view=all&cryo=yes',
-    },
-    {
-      icon: 'unreadMessages',
-      label: strings.unreadMessages,
-      value: data.counters.unreadMessages,
-      href: '#unread-messages',
-    },
-    {
-      icon: 'openRequests',
-      label: strings.chatOpenRequests,
-      value: data.counters.openRequests,
-      href: '#open-requests',
     },
   ];
 
