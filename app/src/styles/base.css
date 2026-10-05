@@ -554,6 +554,35 @@ a.button--primary:hover {
   background: var(--color-surface-tint);
   text-decoration: none;
 }
+.dashboard-counter__label,
+.dashboard-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+/* Dashboard icons (components/DashboardIcon.tsx): line art in the tone's colour, sized to the text. */
+.dashboard-icon {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dashboard-icon--current {
+  color: var(--color-current);
+}
+.dashboard-icon--breeding {
+  color: var(--color-breeding);
+}
+.dashboard-icon--closed {
+  color: var(--color-closed);
+}
+.dashboard-icon--brand {
+  color: #064d99;
+}
 .dashboard-counter strong {
   color: var(--color-ink);
   font-size: 1.35rem;

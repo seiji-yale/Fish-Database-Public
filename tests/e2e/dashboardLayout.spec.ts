@@ -29,3 +29,29 @@ test('on a phone Lab Chat stays folded, after Recent Activity', async ({ page },
   await page.goto('/');
   await expect(page.locator('#lab-chat details')).not.toHaveAttribute('open', '');
 });
+
+test('every counter and panel heading has one decorative icon beside its unchanged label', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const counters = page.locator('.dashboard-counter');
+  await expect(counters).toHaveCount(5);
+  for (const counter of await counters.all()) {
+    await expect(counter.locator('svg.dashboard-icon')).toHaveCount(1);
+    await expect(counter.locator('svg.dashboard-icon')).toHaveAttribute('aria-hidden', 'true');
+  }
+  for (const name of ['Upcoming Breeding', 'Currently Breeding', 'Recent Activity', 'Lab Chat']) {
+    const heading = page.getByRole('heading', { level: 2, name, exact: true });
+    await expect(heading.locator('svg.dashboard-icon')).toHaveCount(1);
+  }
+  // A counter and the panel it opens share their icon.
+  for (const [href, id] of [
+    ['#unread-messages', 'unread-messages-title'],
+    ['#open-requests', 'open-requests-title'],
+  ] as const) {
+    const counterIcon = await page
+      .locator(`.dashboard-counter[href="${href}"] svg`)
+      .getAttribute('data-icon');
+    await expect(page.locator(`#${id} svg`)).toHaveAttribute('data-icon', counterIcon ?? '');
+  }
+});

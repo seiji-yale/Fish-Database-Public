@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { DashboardIcon, type DashboardIconName } from '../components/DashboardIcon';
 import { HeaderSearch } from '../components/HeaderSearch';
 import { Modal } from '../components/Modal';
 import { EmptyState, Skeleton } from '../components/shared';
@@ -144,20 +145,37 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
       void loadMore();
   }, [data.recentActivity.items.length, activityError, loadMore]);
 
-  const counters = [
-    { label: strings.activeLines, value: data.counters.active, href: '/lines?view=active' },
-    { label: strings.closedLines, value: data.counters.closed, href: '/lines?view=closed' },
+  const counters: { icon: DashboardIconName; label: string; value: number; href: string }[] = [
     {
+      icon: 'activeLines',
+      label: strings.activeLines,
+      value: data.counters.active,
+      href: '/lines?view=active',
+    },
+    {
+      icon: 'closedLines',
+      label: strings.closedLines,
+      value: data.counters.closed,
+      href: '/lines?view=closed',
+    },
+    {
+      icon: 'cryopreserved',
       label: strings.cryopreserved,
       value: data.counters.cryopreserved,
       href: '/lines?view=all&cryo=yes',
     },
     {
+      icon: 'unreadMessages',
       label: strings.unreadMessages,
       value: data.counters.unreadMessages,
       href: '#unread-messages',
     },
-    { label: strings.chatOpenRequests, value: data.counters.openRequests, href: '#open-requests' },
+    {
+      icon: 'openRequests',
+      label: strings.chatOpenRequests,
+      value: data.counters.openRequests,
+      href: '#open-requests',
+    },
   ];
 
   return (
@@ -173,7 +191,10 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
       <section className="dashboard-counters" aria-label={strings.dashboard}>
         {counters.map((counter) => (
           <a className="dashboard-counter" href={counter.href} key={counter.label}>
-            <span>{counter.label}</span>
+            <span className="dashboard-counter__label">
+              <DashboardIcon name={counter.icon} />
+              {counter.label}
+            </span>
             <strong>{counter.value}</strong>
           </a>
         ))}
@@ -185,7 +206,9 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
         aria-labelledby="unread-messages-title"
       >
         <div className="dashboard-unread-messages__heading">
-          <h2 id="unread-messages-title">
+          <h2 className="dashboard-heading" id="unread-messages-title">
+            <DashboardIcon name="unreadMessages" />
+
             {strings.unreadMessages}
             {strings.metadataSeparator}
             {String(data.counters.unreadMessages)}
@@ -248,7 +271,9 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
         id="open-requests"
         aria-labelledby="open-requests-title"
       >
-        <h2 id="open-requests-title">
+        <h2 className="dashboard-heading" id="open-requests-title">
+          <DashboardIcon name="openRequests" />
+
           {strings.chatOpenRequests}
           {strings.metadataSeparator}
           {String(data.openRequests.length)}
@@ -290,7 +315,10 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
       </section>
 
       <section className="dashboard-panel dashboard-upcoming" aria-labelledby="upcoming-title">
-        <h2 id="upcoming-title">{strings.upcomingBreeding}</h2>
+        <h2 className="dashboard-heading" id="upcoming-title">
+          <DashboardIcon name="upcomingBreeding" />
+          {strings.upcomingBreeding}
+        </h2>
         {data.upcoming.length === 0 ? (
           <EmptyState message={strings.upcomingBreedingEmpty(data.thresholdMonths)} />
         ) : (
@@ -371,7 +399,10 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
       </section>
 
       <section className="dashboard-panel dashboard-current" aria-labelledby="current-title">
-        <h2 id="current-title">{strings.currentlyBreeding}</h2>
+        <h2 className="dashboard-heading" id="current-title">
+          <DashboardIcon name="currentlyBreeding" />
+          {strings.currentlyBreeding}
+        </h2>
         {data.currentlyBreeding.length === 0 ? (
           <EmptyState message={strings.noBreedingLines} />
         ) : (
@@ -412,7 +443,10 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
       </section>
 
       <section className="dashboard-panel dashboard-activity" aria-labelledby="activity-title">
-        <h2 id="activity-title">{strings.recentActivity}</h2>
+        <h2 className="dashboard-heading" id="activity-title">
+          <DashboardIcon name="recentActivity" />
+          {strings.recentActivity}
+        </h2>
         {data.recentActivity.items.length === 0 ? (
           <EmptyState message={strings.noRecentActivity} />
         ) : (
@@ -459,7 +493,10 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
         id="lab-chat"
         aria-labelledby="lab-chat-title"
       >
-        <h2 id="lab-chat-title">{strings.labChat}</h2>
+        <h2 className="dashboard-heading" id="lab-chat-title">
+          <DashboardIcon name="labChat" />
+          {strings.labChat}
+        </h2>
         <details open={wideScreen}>
           <summary>{`${strings.labChat} · ${strings.chatRequestCount(data.counters.openRequests)}`}</summary>
           <ChatPanel scope={{}} compact />
