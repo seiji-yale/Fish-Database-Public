@@ -31,6 +31,7 @@ import { ChatPanel } from '../components/ChatPanel';
 import { formatDate, formatDateTime } from '../dateFormat';
 import { HttpError } from '../api';
 import { takeFlash } from '../flash';
+import { linesReturnUrl, onPageRestore } from '../linesReturn';
 import { getLineDetail, type LineDetailDocument } from '../lineDetailApi';
 import type { EditResult } from '../lineEditApi';
 import { strings } from '../strings';
@@ -174,12 +175,20 @@ export function LineDetailPage({ id }: { id: string }) {
       cancelled = true;
     };
   }, [id, reloadKey]);
+  // Coming back to this page from the browser's cache: read the line again (it may have changed).
+  useEffect(
+    () =>
+      onPageRestore(() => {
+        setReloadKey((key) => key + 1);
+      }),
+    [],
+  );
 
   if (notFound) {
     return (
       <section className="line-detail-page">
         <EmptyState message={strings.lineNotFound} />
-        <a className="button--primary" href="/lines">
+        <a className="button--primary" href={linesReturnUrl()}>
           {strings.backToLines}
         </a>
       </section>
@@ -198,6 +207,9 @@ export function LineDetailPage({ id }: { id: string }) {
           }}
         />
       )}
+      <a className="back-to-lines" href={linesReturnUrl()}>
+        <span aria-hidden="true">{strings.backToLinesIcon}</span> {strings.backToLines}
+      </a>
       <nav className="section-jump" aria-label={strings.appName}>
         {SECTIONS.map((section) => (
           <a key={section.id} href={`#${section.id}`}>

@@ -453,6 +453,52 @@ a.button--primary:hover {
   color: var(--color-breeding);
   font-weight: 700;
 }
+/* Phone line card (LinesPage `LineCard`): name + status, gene subtitle, DOB and ID Method facts. */
+.line-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.line-card__head .line-link {
+  min-height: 0;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+.line-card__gene {
+  margin: var(--space-1) 0 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+.line-card__facts {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+.line-card__facts dt {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.line-card__facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+.line-card__age {
+  color: var(--color-muted);
+  font-weight: 400;
+}
+.line-card__breed-soon {
+  display: block;
+  margin: var(--space-1) 0 0;
+  font-size: 0.85rem;
+}
 .reference-cell__missing {
   border-bottom: 1px dashed var(--color-muted);
   color: var(--color-muted);
@@ -507,6 +553,35 @@ a.button--primary:hover {
   border-radius: var(--radius);
   background: var(--color-surface-tint);
   text-decoration: none;
+}
+.dashboard-counter__label,
+.dashboard-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+/* Dashboard icons (components/DashboardIcon.tsx): line art in the tone's colour, sized to the text. */
+.dashboard-icon {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dashboard-icon--current {
+  color: var(--color-current);
+}
+.dashboard-icon--breeding {
+  color: var(--color-breeding);
+}
+.dashboard-icon--closed {
+  color: var(--color-closed);
+}
+.dashboard-icon--brand {
+  color: #064d99;
 }
 .dashboard-counter strong {
   color: var(--color-ink);
@@ -747,7 +822,7 @@ a.button--primary:hover {
 }
 @media (min-width: 640px) {
   .dashboard-counters {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .dashboard-navigation {
     flex-wrap: nowrap;
@@ -841,6 +916,17 @@ a.button--primary:hover {
 /* Line Detail (T-009) */
 .content-container:has(.line-detail-page) {
   max-width: none;
+}
+.back-to-lines {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+  font-weight: 700;
+  text-decoration: none;
+}
+.back-to-lines:hover {
+  text-decoration: underline;
 }
 .section-jump {
   display: flex;
@@ -2300,14 +2386,23 @@ a.button--primary:hover {
   background: white;
   box-shadow: 0 6px 20px rgb(0 0 0 / 15%);
 }
-.account-menu__list button {
+.account-menu__list button,
+.account-menu__list a {
   width: 100%;
   min-height: 44px;
   border: 0;
   text-align: left;
   background: transparent;
 }
-.account-menu__list button:hover {
+.account-menu__list a {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  color: inherit;
+  text-decoration: none;
+}
+.account-menu__list button:hover,
+.account-menu__list a:hover {
   background: #eef3fa;
 }
 .guest-banner {

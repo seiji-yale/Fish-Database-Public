@@ -403,6 +403,27 @@ describe('sortLineList (FR-LIST-03)', () => {
     ]);
   });
 
+  it('sorts by status either way and keeps the same status in line-name order', () => {
+    const rows = [
+      item({ name: 'zzz', status: 'Current' }),
+      item({ name: 'mid', status: 'Breeding' }),
+      item({ name: 'aaa', status: 'Current' }),
+      item({ name: 'abc', status: 'Breeding' }),
+    ];
+    expect(sortLineList(rows, 'status', 'asc').map((row) => row.name)).toEqual([
+      'aaa',
+      'zzz',
+      'abc',
+      'mid',
+    ]);
+    expect(sortLineList(rows, 'status', 'desc').map((row) => row.name)).toEqual([
+      'abc',
+      'mid',
+      'aaa',
+      'zzz',
+    ]);
+  });
+
   it('does not mutate the input array', () => {
     const rows = [item({ name: 'b' }), item({ name: 'a' })];
     sortLineList(rows, 'name', 'asc');

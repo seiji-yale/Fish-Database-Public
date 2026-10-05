@@ -25,6 +25,7 @@ import {
 import { getUsers, type SessionUser } from '../session';
 import { strings } from '../strings';
 import { visibleSearchInput } from '../slashShortcut';
+import { onPageRestore, rememberLinesUrl } from '../linesReturn';
 
 interface UrlState {
   view: LineListView;
@@ -68,6 +69,26 @@ const CRYO_VALUE_TO_LABEL: Record<'any' | 'yes' | 'no', (typeof CRYO_LABELS)[num
   yes: strings.yes,
   no: strings.no,
 };
+
+/** The Sort by menu (owner request, 2026-10): phones have no table headers to click, so the common
+ * orders are named here. Each is a `sort:dir` pair; the empty sort is the default (Status, then
+ * Line). A header sort that is not listed shows as Custom. */
+const SORT_PRESETS: readonly { value: string; label: string }[] = [
+  { value: ':asc', label: strings.sortStatusAsc },
+  { value: 'status:desc', label: strings.sortStatusDesc },
+  { value: 'name:asc', label: strings.sortNameAsc },
+  { value: 'dob:desc', label: strings.sortDobDesc },
+  { value: 'dob:asc', label: strings.sortDobAsc },
+  { value: 'lastUpdateAt:desc', label: strings.sortLastUpdateDesc },
+];
+const CUSTOM_SORT = 'custom';
+
+function sortPresetValue(state: UrlState): string {
+  // `status:asc` is the default order, so it shows as the first preset too.
+  const value =
+    state.sort === 'status' && state.dir === 'asc' ? ':asc' : `${state.sort ?? ''}:${state.dir}`;
+  return SORT_PRESETS.some((preset) => preset.value === value) ? value : CUSTOM_SORT;
+}
 
 const COLUMNS_STORAGE_KEY = 'lines-optional-columns';
 const OPTIONAL_COLUMN_KEYS = ['lastUpdateAt', 'ageMonths', 'notes'] as const;
@@ -198,8 +219,6 @@ function DobCell({ item }: { item: LineListItem }) {
   );
 }
 
-/** The phone card (docs/04-ui-spec.md §4): name+status header, then Gene/Phenotype, DOB/age/breed
- * soon, ID Method/Last ID/IDed number, and Cryo/References, each on its own line. */
 /** The line's name as a real link to its detail page: it looks and behaves like one (underline on
  * hover, open in a new tab with Ctrl/Cmd-click), and the row/card around it opens the same page. */
 function LineLink({ item }: { item: LineListItem }) {
@@ -218,37 +237,44 @@ function LineLink({ item }: { item: LineListItem }) {
   );
 }
 
+/** The phone card: only what is needed to pick a line at a glance (owner request, 2026-10): the
+ * name and status, the gene as a quiet subtitle, then the latest generation's DOB (age, Breed soon)
+ * and the ID Method as two labelled facts. Everything else is one tap away on the detail page. */
 function LineCard({ item }: { item: LineListItem }) {
   return (
     <>
-      <p>
-        <strong>
-          <LineLink item={item} />
-        </strong>
+      <div className="line-card__head">
+        <LineLink item={item} />
         <StatusBadge status={item.status} />
-      </p>
-      <p>
-        <span>{`${strings.gene}: ${item.gene ?? strings.emptyValue}`}</span>
-        <span>
-          {`${strings.phenotypes} `}
-          {item.phenotypes.length > 0 ? item.phenotypes.join('; ') : strings.emptyValue}
-        </span>
-      </p>
-      <p>
-        <DobCell item={item} />
-      </p>
-      <p>
-        {`${item.idMethod} · ${strings.lastIdDate} `}
-        {item.lastIdDate === null ? strings.emptyValue : formatDate(item.lastIdDate)}
-        {` · ${strings.idedNumber} ${String(item.idedNumber)}`}
-      </p>
-      <p>
-        <span>{`${strings.cryopreserved}: ${item.isCryopreserved ? strings.yes : strings.no}`}</span>
-        <span>
-          {`${strings.references} `}
-          <ReferenceCell references={item.references} />
-        </span>
-      </p>
+      </div>
+      {item.gene === null ? null : <p className="line-card__gene">{item.gene}</p>}
+      <dl className="line-card__facts">
+        <div>
+          <dt>{strings.dob}</dt>
+          <dd>
+            {item.dob === null ? (
+              strings.emptyValue
+            ) : (
+              <>
+                {formatDate(item.dob)}
+                {item.ageMonths !== null ? (
+                  <span className="line-card__age">{` (${strings.ageMonths(item.ageMonths)})`}</span>
+                ) : null}
+              </>
+            )}
+            {item.needsBreeding ? (
+              <span className="breed-soon line-card__breed-soon">
+                <span aria-hidden="true">{strings.breedSoonIcon}</span>
+                {` ${strings.breedSoon}`}
+              </span>
+            ) : null}
+          </dd>
+        </div>
+        <div>
+          <dt>{strings.idMethod}</dt>
+          <dd>{item.idMethod}</dd>
+        </div>
+      </dl>
     </>
   );
 }
@@ -342,6 +368,7 @@ export function LinesPage() {
   const [state, setState] = useState<UrlState>(() => stateFromLocation());
   const [searchInput, setSearchInput] = useState(() => stateFromLocation().q ?? '');
   const [items, setItems] = useState<LineListItem[] | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<SessionUser[]>([]);
   const [optionalColumnKeys, setOptionalColumnKeys] = useState<Set<OptionalColumnKey>>(() =>
@@ -370,6 +397,21 @@ export function LinesPage() {
       window.removeEventListener('popstate', onPopState);
     };
   }, []);
+
+  // Line Detail's Back to Lines link returns to this exact view.
+  useEffect(() => {
+    rememberLinesUrl(urlFor(state));
+  }, [state]);
+
+  // Back from a line restores this page from the browser's cache as it was: fetch the list again
+  // so an edit made on the detail page shows up (owner request, 2026-10).
+  useEffect(
+    () =>
+      onPageRestore(() => {
+        setReloadKey((key) => key + 1);
+      }),
+    [],
+  );
 
   useEffect(() => {
     getUsers()
@@ -402,7 +444,16 @@ export function LinesPage() {
     return () => {
       cancelled = true;
     };
-  }, [state.view, state.q, state.sort, state.dir, state.idMethod, state.cryo, state.breedSoon]);
+  }, [
+    state.view,
+    state.q,
+    state.sort,
+    state.dir,
+    state.idMethod,
+    state.cryo,
+    state.breedSoon,
+    reloadKey,
+  ]);
 
   // Debounces the search box: typing updates `searchInput` immediately, but the URL/fetch only
   // follow after a short pause, so a fetch is not fired on every keystroke.
@@ -437,6 +488,15 @@ export function LinesPage() {
 
   function onRowClick(item: LineListItem) {
     window.location.href = `/lines/${item.id}`;
+  }
+
+  function onSortPresetChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const [sort = '', dir] = event.target.value.split(':');
+    navigate({
+      ...state,
+      sort: sort === '' ? undefined : sort,
+      dir: dir === 'desc' ? 'desc' : 'asc',
+    });
   }
 
   function onIdMethodChange(event: React.ChangeEvent<HTMLSelectElement>) {
@@ -501,6 +561,21 @@ export function LinesPage() {
       {/* Every filter is a caption above its control, bottom-aligned in one tinted panel, so it is
           clear what each set of buttons filters (owner feedback on PR #13). */}
       <div className="lines-filters" role="group" aria-label={strings.filters}>
+        <label className="filter-field">
+          <span className="filter-field__label">{strings.sortBy}</span>
+          <select value={sortPresetValue(state)} onChange={onSortPresetChange}>
+            {SORT_PRESETS.map((preset) => (
+              <option key={preset.value} value={preset.value}>
+                {preset.label}
+              </option>
+            ))}
+            {sortPresetValue(state) === CUSTOM_SORT ? (
+              <option value={CUSTOM_SORT} disabled>
+                {strings.sortCustom}
+              </option>
+            ) : null}
+          </select>
+        </label>
         <label className="filter-field">
           <span className="filter-field__label">{strings.filterIdMethod}</span>
           <select value={state.idMethod ?? ''} onChange={onIdMethodChange}>
