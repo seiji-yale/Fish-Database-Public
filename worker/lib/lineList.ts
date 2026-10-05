@@ -263,7 +263,9 @@ export function sortLineList(
     const av = sortValue(a, sort);
     const bv = sortValue(b, sort);
     const cmp = av < bv ? -1 : av > bv ? 1 : 0;
-    return dir === 'desc' ? -cmp : cmp;
+    if (cmp !== 0) return dir === 'desc' ? -cmp : cmp;
+    // Lines with the same status stay in name order whichever way the status runs.
+    return sort === 'status' ? compareDefault(a, b) : 0;
   });
   return sorted;
 }

@@ -60,3 +60,23 @@ test.describe('phone tab bar', () => {
     await expect(page.getByRole('searchbox', { name: 'Search lines' })).toBeFocused();
   });
 });
+
+test('an Admin reaches Settings from the account menu, on every screen width', async ({ page }) => {
+  await useLongAppName(page);
+  await page.goto('/');
+  await page.locator('.account-menu > summary').click();
+  const settings = page.locator('.account-menu__list').getByRole('link', { name: 'Settings' });
+  await expect(settings).toBeVisible();
+  await settings.click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
+test('a member sees no Settings item in the account menu', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('.account-menu > summary').click();
+  await expect(page.locator('.account-menu__list')).toBeVisible();
+  await expect(
+    page.locator('.account-menu__list').getByRole('link', { name: 'Settings' }),
+  ).toHaveCount(0);
+});

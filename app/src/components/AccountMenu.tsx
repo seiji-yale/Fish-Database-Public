@@ -1,4 +1,5 @@
-/** The signed-in person's menu in the header (ADR-0005): change password, copy the guest link, sign out. */
+/** The signed-in person's menu in the header (ADR-0005): Settings (Admin only; the header's ⚙ link is
+ * hidden on phones, so this is the way there), change password, copy the guest link, sign out. */
 import { useEffect, useRef, useState } from 'react';
 import { getGuestLink, guestUrl, signOut, SESSION_CHANGED, type SessionUser } from '../session';
 import { strings } from '../strings';
@@ -67,6 +68,11 @@ export function AccountMenu({
         {isGuest ? <span className="chip">{strings.roleGuest}</span> : null}
       </summary>
       <ul className="account-menu__list">
+        {user.role === 'admin' ? (
+          <li>
+            <a href="/settings">{strings.settings}</a>
+          </li>
+        ) : null}
         {isGuest ? null : (
           <>
             <li>

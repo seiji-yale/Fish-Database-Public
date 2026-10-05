@@ -56,10 +56,11 @@ test('Line List is responsive: cards without horizontal scroll on phone, full ta
   );
   expect(overflow).toBeLessThanOrEqual(0);
   if (testInfo.project.name === 'phone-375') {
-    // docs/04-ui-spec.md §4's compact phone card, not the generic label/value list.
+    // The compact phone card: name and status, then DOB and ID Method as labelled facts.
     const card = rows(page, testInfo).filter({ hasText: 'demo_c3' });
-    await expect(card).toContainText('Gene: —');
-    await expect(card).toContainText('Cryopreserved: Yes');
+    await expect(card.locator('.status-badge')).toBeVisible();
+    await expect(card.locator('.line-card__facts dt')).toHaveText(['DOB', 'ID Method']);
+    await expect(card).not.toContainText('Cryopreserved');
   }
 });
 
@@ -179,4 +180,29 @@ test('the way to a line’s details is obvious: pointer cursor, hover highlight,
   // Clicking the name navigates once, to that line.
   await link.click();
   await expect(page).toHaveURL(/\/lines\/[^/?]+$/);
+});
+
+test('Line List: Sort by orders the lines by status either way, and the URL carries it', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/lines?view=all');
+  await expect(rows(page, testInfo).first()).toBeVisible();
+  const sortBy = page.getByLabel('Sort by');
+  await expect(sortBy).toHaveValue(':asc');
+  await expect(rows(page, testInfo).last()).toContainText('DEMO_E5');
+  await sortBy.selectOption({ label: 'Status: Breeding first' });
+  await expect(page).toHaveURL(/sort=status&dir=desc/);
+  await expect(rows(page, testInfo).first()).toContainText('DEMO_E5');
+  await sortBy.selectOption({ label: 'Status: Current first' });
+  await expect(page).not.toHaveURL(/sort=/);
+  await expect(rows(page, testInfo).last()).toContainText('DEMO_E5');
+});
+
+test('Line Detail: Back to Lines returns to the same list view', async ({ page }, testInfo) => {
+  await page.goto('/lines?view=all&sort=status&dir=desc');
+  await rows(page, testInfo).filter({ hasText: 'demo_c3' }).first().click();
+  await expect(page).toHaveURL(/\/lines\/[^/?]+$/);
+  await page.getByRole('link', { name: 'Back to Lines' }).click();
+  await expect(page).toHaveURL(/\/lines\?view=all&sort=status&dir=desc$/);
+  await expect(rows(page, testInfo).first()).toContainText('DEMO_E5');
 });
