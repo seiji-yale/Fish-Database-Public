@@ -136,3 +136,8 @@ a Feeder behaves as a Guest for line data and sees no Feeding Schedule yet (T-03
 
 - What was done: session types and `useActingUser().can()`, Settings → Users role select and "Make Member / Admin / Feeder" menu from `ASSIGNABLE_ROLES`, `Feeder` chip in the account menu, no Guest-link item for restricted roles; docs (requirements roles, data model §5, glossary, operations §4, spec §6.1).
 - Open: browser suite result and the owner's preview check; rehearsal (Step 1).
+
+### Browser suite — 2026-10-23 — implementer
+
+- `npm run test:e2e`: 322 passed, 25 skipped, 1 failed (`chat.write.spec.ts` "T-023 Part D" on phone-375, Edit button not found).
+- The same failure (plus the known `newLine.write.spec.ts` AC1/AC2 flake) appears on unmodified `origin/main` in a full run, and the chat spec passes alone on both. It is a pre-existing load-dependent flake, not caused by T-031. To be handled separately (not in this ticket).
