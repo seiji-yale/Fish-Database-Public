@@ -270,9 +270,9 @@ describe('migration 0011 (imported task messages leave the chat)', () => {
         .map((row) => (row as { sql: string | null }).sql?.replace(/\s+/g, ' ') ?? null);
     const before = users();
     const indexesBefore = indexes();
-    expect(() =>
-      sqlite.exec("UPDATE users SET role = 'feeder' WHERE id = '" + BOB + "'"),
-    ).toThrow();
+    expect(() => {
+      sqlite.exec("UPDATE users SET role = 'feeder' WHERE id = '" + BOB + "'");
+    }).toThrow();
 
     // D1 applies one migration file as a single transaction; defer_foreign_keys lasts until it commits.
     sqlite.exec('BEGIN');
@@ -287,9 +287,9 @@ describe('migration 0011 (imported task messages leave the chat)', () => {
     });
     sqlite.exec(`INSERT INTO users (id, name, role, created_at, updated_at)
       VALUES ('F1', 'Feeder One', 'feeder', '2026-10-09T00:00:00Z', '2026-10-09T00:00:00Z')`);
-    expect(() =>
+    expect(() => {
       sqlite.exec(`INSERT INTO users (id, name, role, created_at, updated_at)
-        VALUES ('X1', 'Other', 'other', '2026-10-09T00:00:00Z', '2026-10-09T00:00:00Z')`),
-    ).toThrow();
+        VALUES ('X1', 'Other', 'other', '2026-10-09T00:00:00Z', '2026-10-09T00:00:00Z')`);
+    }).toThrow();
   });
 });

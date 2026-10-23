@@ -1,6 +1,7 @@
 /** The signed-in person's menu in the header (ADR-0005): Settings (Admin only; the header's ⚙ link is
  * hidden on phones, so this is the way there), change password, copy the guest link, sign out. */
 import { useEffect, useRef, useState } from 'react';
+import { isRestricted } from '../../../domain/permissions';
 import { getGuestLink, guestUrl, signOut, SESSION_CHANGED, type SessionUser } from '../session';
 import { strings } from '../strings';
 
@@ -66,6 +67,7 @@ export function AccountMenu({
         <span className="account-menu__name">{user.name}</span>
         {user.role === 'admin' ? <span className="chip">{strings.roleAdmin}</span> : null}
         {isGuest ? <span className="chip">{strings.roleGuest}</span> : null}
+        {user.role === 'feeder' ? <span className="chip">{strings.roleFeeder}</span> : null}
       </summary>
       <ul className="account-menu__list">
         {user.role === 'admin' ? (
@@ -86,11 +88,13 @@ export function AccountMenu({
                 {strings.changePassword}
               </button>
             </li>
-            <li>
-              <button type="button" onClick={copyGuestLink}>
-                {strings.shareGuestLink}
-              </button>
-            </li>
+            {isRestricted(user.role) ? null : (
+              <li>
+                <button type="button" onClick={copyGuestLink}>
+                  {strings.shareGuestLink}
+                </button>
+              </li>
+            )}
           </>
         )}
         <li>

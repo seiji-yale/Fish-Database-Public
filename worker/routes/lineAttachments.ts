@@ -72,13 +72,13 @@ function text(form: FormData, name: string): string | null {
 }
 
 lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
+  const author = await requireAuthor(c, 'data');
   let form: FormData;
   try {
     form = await c.req.formData();
   } catch {
     throw new ApiError(400, 'INVALID_INPUT', messages.invalidInput);
   }
-  const author = await requireAuthor(c, 'data');
   const document = await documentOf(c);
   const file = form.get('file');
   if (!(file instanceof File)) throw invalid({ file: messages.uploadMissingFile });

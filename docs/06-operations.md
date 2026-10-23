@@ -23,6 +23,10 @@ The app stores attachment metadata in D1 and file bytes in R2. Preserve both in 
 Run `npm run check`, `npm run check:public`, `npm run build`, and the browser suite before release.
 Review migrations and deploy to preview before production.
 
+Migration `0013_feeder_role.sql` rebuilds the `users` table. Rehearse it on a copy of production
+(restore a fresh export or dump into a rehearsal database, run `npm run db:migrate:rehearsal`, sign in,
+and compare user ids, roles and password columns) before running `npm run db:migrate:production`.
+
 ## 7. Cost
 
 This application is designed for a small installation on free tiers. Check current provider limits

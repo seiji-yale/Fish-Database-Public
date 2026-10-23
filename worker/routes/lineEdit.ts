@@ -9,7 +9,7 @@ import { labToday } from '../../domain/dates';
 import { descriptiveFromSnapshot, validateLineEdit } from '../../domain/lineEdit';
 import { getLineVersion } from '../db/queries/lineVersions';
 import { nowIso } from '../db/ids';
-import { actingUser, requireAuthor } from '../lib/attribution';
+import { requireAuthor } from '../lib/attribution';
 import { ApiError } from '../lib/errors';
 import {
   applyDescriptive,
@@ -20,6 +20,7 @@ import {
 } from '../lib/lineEdit';
 import { loadLineDocument, withLineWrite } from '../lib/lineWrite';
 import { messages } from '../lib/messages';
+import { requireCapability } from '../lib/permissions';
 import type { Bindings } from '../middleware/session';
 
 export const lineEditRoutes = new Hono<{ Bindings: Bindings }>();
@@ -99,8 +100,7 @@ lineEditRoutes.get('/lines/:id/restore/:versionNo/preview', async (c) => {
 });
 
 lineEditRoutes.post('/lines/:id/restore/:versionNo', async (c) => {
-  const acting = await actingUser(c);
-  if (acting.role !== 'admin') throw new ApiError(403, 'ADMIN_ONLY', messages.adminOnly);
+  await requireCapability(c, 'admin.*');
   const body = await readJson(c.req.raw);
   const author = await requireAuthor(c, 'data');
   const expectedVersion = z.number().int().min(1).safeParse(body['expectedVersion']);

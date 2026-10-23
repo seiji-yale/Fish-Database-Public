@@ -4,13 +4,14 @@
  */
 import { z } from 'zod';
 import { MIN_PASSWORD_LENGTH } from './accounts';
+import { ASSIGNABLE_ROLES } from './permissions';
 
 export const adminMessages = {
   nameRequired: 'Enter a name.',
   nameTooLong: 'Use at most 40 characters for a name.',
   nameTaken: (name: string) =>
     `A user named "${name}" already exists (names are not case-sensitive).`,
-  roleInvalid: 'Choose Member or Admin.',
+  roleInvalid: 'Choose Member, Admin or Feeder.',
   builtinLocked: 'The built-in Guest and Admin entries cannot be renamed, changed or removed.',
   inviteSelf: 'Use Change password in your account menu for your own password.',
   deleteSelf: 'You cannot delete yourself.',
@@ -58,7 +59,7 @@ const userName = z
   .max(USER_NAME_MAX, adminMessages.nameTooLong);
 
 /** People are Members or Admins; Guests come in through the Guest URL (ADR-0005). */
-const assignableRole = z.enum(['member', 'admin'], { error: adminMessages.roleInvalid });
+const assignableRole = z.enum(ASSIGNABLE_ROLES, { error: adminMessages.roleInvalid });
 const initialPassword = z
   .string({ error: adminMessages.passwordTooShort })
   .min(MIN_PASSWORD_LENGTH, adminMessages.passwordTooShort);

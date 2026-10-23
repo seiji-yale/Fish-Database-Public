@@ -113,3 +113,26 @@ a Feeder behaves as a Guest for line data and sees no Feeding Schedule yet (T-03
 ## Review Log
 
 <!-- Append Step Reports, Step Reviews, Ticket Review, Owner feedback here, newest at the bottom. -->
+
+### Step 1 report — 2026-10-23 — implementer
+
+- What was done: `0013_feeder_role.sql` rebuilds `users` with the `feeder` role. Migration number is 0013 because 0012 (`cryo_use_undo`) already exists in the public repository.
+- Deviation (spec §6.1 corrected): the documented "create `users_new`, drop `users`, rename" order fails at COMMIT even with `PRAGMA defer_foreign_keys`, because rows inserted into `users_new` do not cancel the violations created by `DROP TABLE users`. Reproduced with a minimal script; a negative control (a row left out) also fails, so the deferred check stays effective. The migration copies rows to `users_copy`, drops `users`, recreates `users` and inserts the rows back.
+- Checks: `worker/db/migrations.test.ts` (ids, passwords, session columns, index list, `PRAGMA foreign_key_check`, feeder accepted, other role refused) ✅
+- Rehearsal on a production copy: NOT DONE. The owner runs the commands in `docs/06-operations.md` §4 (restore a fresh dump into the rehearsal database, `npm run db:migrate:rehearsal`, sign in, compare users). Record the result here before production.
+
+### Step 2 report — 2026-10-23 — implementer
+
+- What was done: `domain/permissions.ts` (`CAPABILITIES`, `can`, `capabilitiesOf`, `isRestricted`, `ASSIGNABLE_ROLES`); `resolveAuthor` uses `can()` (the `guestsMayChat` rule is kept for Guests).
+- Checks: table-driven test of every role × capability against spec §2.2; domain coverage 100 % ✅
+
+### Step 3 report — 2026-10-23 — implementer
+
+- What was done: `worker/lib/permissions.ts` `requireCapability` (`admin.*` keeps `403 ADMIN_ONLY`, others `403 FORBIDDEN` with `restrictedApi`); admin, restore and protocol-admin routes use it; `GET /api/session` returns `capabilities`; role enum accepts Feeder; Feeders cannot copy the Guest link but can change their own password.
+- Found by the new `worker/writeRoutes.test.ts` (every data-changing route refuses Guest and Feeder): chat edit/delete/request returned 404 and message post and attachment upload returned 400 before the permission check. Each now checks the permission first.
+- Checks: `accounts.test.ts` Feeder tests (invite, capabilities for the roles, refusals, Member ↔ Feeder, last Admin guard) ✅ `npm run check` ✅ (pytest 143 after creating `.venv`).
+
+### Step 4 report — 2026-10-23 — implementer
+
+- What was done: session types and `useActingUser().can()`, Settings → Users role select and "Make Member / Admin / Feeder" menu from `ASSIGNABLE_ROLES`, `Feeder` chip in the account menu, no Guest-link item for restricted roles; docs (requirements roles, data model §5, glossary, operations §4, spec §6.1).
+- Open: browser suite result and the owner's preview check; rehearsal (Step 1).
