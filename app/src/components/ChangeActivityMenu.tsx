@@ -9,7 +9,14 @@ import type { LineStatus } from '../lineDetailApi';
 import { strings } from '../strings';
 
 export type ActivityChoice =
-  'start-breeding' | 'genotyping' | 'close' | 'reopen' | 'edit-details' | 'id-method' | 'cryo';
+  | 'start-breeding'
+  | 'cancel-breeding'
+  | 'genotyping'
+  | 'close'
+  | 'reopen'
+  | 'edit-details'
+  | 'id-method'
+  | 'cryo';
 
 interface MenuItem {
   choice: ActivityChoice | null;
@@ -25,6 +32,11 @@ export function menuItems(status: LineStatus, canEdit: boolean): MenuItem[] {
       choice: 'start-breeding',
       label: strings.activityStartBreeding,
       reason: guest ?? (status === 'Breeding' ? strings.activityDisabledBreedingActive : null),
+    },
+    {
+      choice: 'cancel-breeding',
+      label: strings.activityCancelBreeding,
+      reason: guest ?? (status === 'Breeding' ? null : strings.activityDisabledNotBreeding),
     },
     { choice: 'genotyping', label: strings.activityGenotyping, reason: guest },
     {

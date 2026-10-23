@@ -293,6 +293,56 @@ async function loadProtocolIds(db: Awaited<ReturnType<typeof setup>>['db'], line
   return (await listIdProtocolsByLine(db, lineId)).map((row) => row.id);
 }
 
+describe('POST /api/lines/:id/cancel-breeding (BR-1, T-039)', () => {
+  it('moves Breeding back to Current, keeps DOB, generation and counts, and writes an edited version', async () => {
+    const { db, call, base, line, reload } = await setup();
+    const before = await reload();
+    await call(`${base}/start-breeding`, { expectedVersion: 1, crossDate: CROSS });
+    const response = await call(`${base}/cancel-breeding`, {
+      expectedVersion: 2,
+      note: 'Wrong line',
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json<ActivityBody>()).toMatchObject({
+      version: 3,
+      summary: `Breeding cancelled (cross date ${CROSS}).`,
+    });
+    expect(await reload()).toMatchObject({
+      status: 'Current',
+      breeding_started_at: null,
+      dob: before.dob,
+      generation_no: before.generation_no,
+      ided_number: before.ided_number,
+      version: 3,
+    });
+    const [latest] = await listLineVersionsByLine(db, line.id);
+    expect(latest).toMatchObject({ change_type: 'edited', note: 'Wrong line', version_no: 3 });
+  });
+
+  it('is refused on Current and Closed lines, for stale versions, and for Guests and Feeders', async () => {
+    const current = await setup();
+    const refused = await current.call(`${current.base}/cancel-breeding`, { expectedVersion: 1 });
+    expect(refused.status).toBe(409);
+    expect((await refused.json<ErrorBody>()).error.code).toBe('INVALID_TRANSITION');
+    const closed = await setup('DEMO_E5');
+    expect(
+      (await closed.call(`${closed.base}/cancel-breeding`, { expectedVersion: 1 })).status,
+    ).toBe(409);
+
+    const stale = await setup();
+    await stale.call(`${stale.base}/start-breeding`, { expectedVersion: 1, crossDate: CROSS });
+    expect((await stale.call(`${stale.base}/cancel-breeding`, { expectedVersion: 1 })).status).toBe(
+      409,
+    );
+
+    const guest = browser(stale.db);
+    await guest.actAs('Guest');
+    expect((await guest.call(`${stale.base}/cancel-breeding`, { expectedVersion: 2 })).status).toBe(
+      403,
+    );
+  });
+});
+
 describe('close and reopen (BR-1, FR-ACT-06/07)', () => {
   it('Close from Current or Breeding records the date and reason; Reopen goes back to Current', async () => {
     const { call, base, reload } = await setup();

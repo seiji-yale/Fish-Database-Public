@@ -96,11 +96,14 @@ export const genotypingSchema = (today: string) =>
 
 export const closeSchema = z.object({ expectedVersion, reason: optionalText(500) });
 
+export const cancelBreedingSchema = z.object({ expectedVersion, note: optionalText(500) });
+
 export const reopenSchema = z.object({ expectedVersion, note: optionalText(500) });
 
 export type StartBreedingInput = z.output<ReturnType<typeof startBreedingSchema>>;
 export type GenotypingActivityInput = z.output<ReturnType<typeof genotypingSchema>>;
 export type CloseInput = z.output<typeof closeSchema>;
+export type CancelBreedingInput = z.output<typeof cancelBreedingSchema>;
 export type ReopenInput = z.output<typeof reopenSchema>;
 
 export type ActivityValidation<T> =
@@ -122,4 +125,5 @@ export const validateStartBreeding = (input: unknown, today: string) =>
 export const validateGenotyping = (input: unknown, today: string) =>
   validate(genotypingSchema(today), input);
 export const validateClose = (input: unknown) => validate(closeSchema, input);
+export const validateCancelBreeding = (input: unknown) => validate(cancelBreedingSchema, input);
 export const validateReopen = (input: unknown) => validate(reopenSchema, input);

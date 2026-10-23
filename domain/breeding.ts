@@ -53,6 +53,16 @@ export function startBreeding(
   });
 }
 
+/**
+ * BR-1 (T-039): a line that started breeding by mistake, or whose cross was abandoned, goes back to
+ * Current. DOB, generation, IDed number and genotyping records are untouched; only the breeding date
+ * is dropped. A line that started breeding from Closed returns to Current, not to Closed.
+ */
+export function cancelBreeding(line: LineDoc): LineDoc {
+  if (line.status !== 'Breeding') throw new InvalidTransitionError(line.status, 'Current');
+  return copyLine(line, { status: 'Current', breedingStartedAt: null });
+}
+
 /** BR-2: records either accumulate in this generation or register the next generation. */
 export function applyGenotyping(line: LineDoc, record: GenotypingInput, today: string): LineDoc {
   assertIsoDate(today, 'Today');

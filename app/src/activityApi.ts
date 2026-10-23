@@ -1,7 +1,8 @@
 import { request } from './api';
 import type { EditResult } from './lineEditApi';
 
-export type ActivityAction = 'start-breeding' | 'genotyping' | 'close' | 'reopen';
+export type ActivityAction =
+  'start-breeding' | 'cancel-breeding' | 'genotyping' | 'close' | 'reopen';
 
 /** `POST /api/lines/:id/<action>` (T-013): the API answers `{ id, version, summary }`. */
 export const postActivity = (

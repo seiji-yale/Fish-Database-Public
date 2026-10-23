@@ -12,6 +12,7 @@ import { EmptyState, Field, Skeleton, StatusBadge, Toast } from '../components/s
 import {
   CloseLineDialog,
   GenotypingDialog,
+  CancelBreedingDialog,
   ReopenLineDialog,
   StartBreedingDialog,
 } from '../components/ActivityDialogs';
@@ -373,6 +374,7 @@ function activityDialog(
     return <Toast message={reason} onClose={handlers.onClose} />;
   const props = { line, ...handlers };
   if (choice === 'start-breeding') return <StartBreedingDialog {...props} />;
+  if (choice === 'cancel-breeding') return <CancelBreedingDialog {...props} />;
   if (choice === 'genotyping') return <GenotypingDialog {...props} />;
   if (choice === 'close') return <CloseLineDialog {...props} />;
   return <ReopenLineDialog {...props} />;

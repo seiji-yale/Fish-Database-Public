@@ -3,6 +3,7 @@ import {
   activityMessages,
   validateClose,
   validateGenotyping,
+  validateCancelBreeding,
   validateReopen,
   validateStartBreeding,
 } from './activity';
@@ -119,5 +120,15 @@ describe('validateClose and validateReopen', () => {
       ok: true,
       value: { expectedVersion: 2, note: 'back' },
     });
+  });
+});
+
+describe('validateCancelBreeding', () => {
+  it('needs the version and treats the note as optional text', () => {
+    expect(validateCancelBreeding({ expectedVersion: 2 })).toEqual({
+      ok: true,
+      value: { expectedVersion: 2, note: null },
+    });
+    expect(validateCancelBreeding({ note: 'x' })).toMatchObject({ ok: false });
   });
 });

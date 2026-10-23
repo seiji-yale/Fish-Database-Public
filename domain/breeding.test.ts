@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ageInMonths,
   applyGenotyping,
+  cancelBreeding,
   closeLine,
   InvalidGenotypingInputError,
   InvalidTransitionError,
@@ -65,6 +66,15 @@ describe('BR-1 status machine', () => {
       );
     };
     expect(act).toThrow(InvalidTransitionError);
+  });
+
+  it('Cancel Breeding returns a Breeding line to Current and drops only the breeding date', () => {
+    const result = cancelBreeding({ ...line('Breeding'), breedingStartedAt: '2026-09-20' });
+    expect(result).toEqual({ ...line('Current'), breedingStartedAt: null });
+  });
+
+  it.each<LineStatus>(['Current', 'Closed'])('Cancel Breeding is refused from %s', (status) => {
+    expect(() => cancelBreeding(line(status))).toThrow(InvalidTransitionError);
   });
 
   it('clears a closed reason when Start Breeding is used directly from Closed', () => {
