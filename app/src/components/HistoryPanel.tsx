@@ -114,6 +114,8 @@ function RestoreFlow({
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     getRestorePreview(lineId, versionNo)
@@ -131,7 +133,7 @@ function RestoreFlow({
     return () => {
       cancelled = true;
     };
-  }, [lineId, versionNo]);
+  }, [lineId, versionNo, attempt]);
 
   async function restore() {
     setBusy(true);
@@ -172,6 +174,19 @@ function RestoreFlow({
           <DiffTable diff={preview.changes} protocols={protocols} />
         )}
         {message === null ? null : <p role="alert">{message}</p>}
+        {preview === null && message !== null ? (
+          <p>
+            <button
+              type="button"
+              onClick={() => {
+                setMessage(null);
+                setAttempt((value) => value + 1);
+              }}
+            >
+              {strings.restoreRetry}
+            </button>
+          </p>
+        ) : null}
       </ConfirmDialog>
     </>
   );
