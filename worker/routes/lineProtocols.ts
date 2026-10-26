@@ -16,10 +16,11 @@ import { currentProtocols } from '../../domain/currentProtocols';
 import { nowIso } from '../db/ids';
 import { ID_PROTOCOLS } from '../db/queries/idProtocols';
 import type { IdProtocolRow } from '../db/types';
-import { actingUser, requireAuthor } from '../lib/attribution';
+import { requireAuthor } from '../lib/attribution';
 import { ApiError } from '../lib/errors';
 import { loadLineDocument, withLineWrite, type LineWriteInput } from '../lib/lineWrite';
 import { messages } from '../lib/messages';
+import { requireCapability } from '../lib/permissions';
 import {
   addProtocolChange,
   editProtocolChange,
@@ -53,8 +54,7 @@ function invalid(errors: Record<string, string>): ApiError {
 
 /** The body without the attribution answer, and who is recorded as the author (BR-5). */
 async function authorAndForm(c: Ctx, admin = false) {
-  if (admin && (await actingUser(c)).role !== 'admin')
-    throw new ApiError(403, 'ADMIN_ONLY', messages.adminOnly);
+  if (admin) await requireCapability(c, 'admin.*');
   const body = await readBody(c.req.raw);
   const author = await requireAuthor(c, 'data');
   const form = { ...body };

@@ -11,6 +11,7 @@ import { insertStatement } from '../db/queries/shared';
 import { actingUser, requireAuthor } from '../lib/attribution';
 import { ApiError } from '../lib/errors';
 import { messages } from '../lib/messages';
+import { requireCapability } from '../lib/permissions';
 import { resolveChatMentions } from '../lib/chatMentions';
 import type { ActivityRow, ChatMessageRow, ChatReadRow } from '../db/types';
 import type { Bindings } from '../middleware/session';
@@ -245,12 +246,12 @@ chatRoutes.get('/messages', async (c) => {
 });
 
 async function postMessage(c: Context<{ Bindings: Bindings }>, lineId: string | null) {
+  const author = await requireAuthor(c, 'chat');
   const raw = await readJson(c.req.raw);
   const parsed = messageInput.safeParse(raw);
   if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', messages.chatInvalidMessage);
   if (lineId !== null) await lineExists(c.env.DB, lineId);
   const requestType = await validateRequestType(c.env.DB, parsed.data.requestType);
-  const author = await requireAuthor(c, 'chat');
   const now = nowIso();
   const message: ChatMessageRow = {
     id: newId(),
@@ -301,6 +302,7 @@ chatRoutes.post('/lines/:id/messages', (c) => postMessage(c, c.req.param('id')))
 chatRoutes.post('/messages', (c) => postMessage(c, null));
 
 chatRoutes.patch('/messages/:mid', async (c) => {
+  await requireCapability(c, 'chat.write');
   const message = await messageById(c.env.DB, c.req.param('mid'));
   const acting = await actingUser(c);
   if (acting.id !== message.user_id)
@@ -361,6 +363,7 @@ chatRoutes.patch('/messages/:mid', async (c) => {
 });
 
 chatRoutes.delete('/messages/:mid', async (c) => {
+  await requireCapability(c, 'chat.write');
   const message = await messageById(c.env.DB, c.req.param('mid'));
   const acting = await actingUser(c);
   if (acting.id !== message.user_id)
@@ -377,6 +380,7 @@ chatRoutes.delete('/messages/:mid', async (c) => {
 });
 
 chatRoutes.patch('/messages/:mid/request', async (c) => {
+  await requireCapability(c, 'chat.write');
   const message = await messageById(c.env.DB, c.req.param('mid'));
   if (message.request_status === null)
     throw new ApiError(400, 'INVALID_INPUT', messages.chatRequestType);

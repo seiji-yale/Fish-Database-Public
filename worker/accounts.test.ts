@@ -425,3 +425,82 @@ describe('migration 0010', () => {
     expect(await getSetting(db, 'lab_passphrase_hash')).toBeNull();
   });
 });
+
+describe('the Feeder role (ADR-0006, T-031)', () => {
+  it('is added and invited like a Member, signs in through the invite and is told its capabilities', async () => {
+    const admin = browser();
+    await admin.actAs('Admin');
+    const token = await invite(admin, 'Feeder One', 'feeder');
+    const feeder = browser(admin.db);
+    const join = await feeder.call(`/api/join/${token}`, {
+      initialPassword: 'first-pass',
+      newPassword: 'feeder-pass-1',
+    });
+    expect(join.status).toBe(200);
+    const session = await (
+      await feeder.call('/api/session')
+    ).json<{ user: { role: string }; capabilities: string[] }>();
+    expect(session.user.role).toBe('feeder');
+    expect(session.capabilities).toEqual([
+      'lines.read_overview',
+      'attachments.read_refs',
+      'users.list',
+      'feeding.read',
+      'feeding.write',
+      'feeding.export',
+    ]);
+  });
+
+  it('reports capabilities for all four roles and none when signed out', async () => {
+    const signedOut = browser();
+    const body = await (await signedOut.call('/api/session')).json<{ capabilities: string[] }>();
+    expect(body.capabilities).toEqual([]);
+    for (const [name, count] of [
+      ['Admin', 14],
+      ['Carol', 13],
+      ['Guest', 2],
+    ] as const) {
+      const s = browser(signedOut.db);
+      await s.actAs(name);
+      const session = await (await s.call('/api/session')).json<{ capabilities: string[] }>();
+      expect(session.capabilities, name).toHaveLength(count);
+    }
+  });
+
+  it('cannot write, chat, copy the Guest link or reach Admin routes, but can change its own password', async () => {
+    const admin = browser();
+    await admin.actAs('Admin');
+    await invite(admin, 'Feeder One', 'feeder');
+    const feeder = browser(admin.db);
+    await feeder.actAs('Feeder One');
+    const create = await feeder.call('/api/lines', { name: 'feeder-line' });
+    expect(create.status).toBe(403);
+    expect(await code(create)).toBe('FORBIDDEN');
+    expect((await feeder.call('/api/messages', { body: 'hello' })).status).toBe(403);
+    expect((await feeder.call('/api/guest-link')).status).toBe(403);
+    const adminRoute = await feeder.call('/api/admin/users');
+    expect(adminRoute.status).toBe(403);
+    expect(await code(adminRoute)).toBe('ADMIN_ONLY');
+    const changed = await feeder.call('/api/session/password', {
+      currentPassword: TEST_PASSWORD,
+      newPassword: 'brand-new-pw',
+    });
+    expect(changed.status).toBe(200);
+  });
+
+  it('changes between Member and Feeder in both directions; the last Admin cannot become a Feeder', async () => {
+    const admin = browser();
+    const adminId = await admin.actAs('Admin');
+    const carol = await getUserByName(admin.db, 'Carol');
+    const patch = (id: string, role: string) =>
+      admin.call(`/api/admin/users/${id}`, { role }, 'PATCH');
+    expect((await patch(carol?.id ?? '', 'feeder')).status).toBe(200);
+    expect((await getUserByName(admin.db, 'Carol'))?.role).toBe('feeder');
+    expect((await patch(carol?.id ?? '', 'member')).status).toBe(200);
+    const demote = await patch(adminId, 'feeder');
+    expect(demote.status).toBe(409);
+    expect(await code(demote)).toBe('LAST_ADMIN');
+    const bad = await patch(carol?.id ?? '', 'guest');
+    expect(bad.status).toBe(400);
+  });
+});
