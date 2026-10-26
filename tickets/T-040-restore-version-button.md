@@ -44,3 +44,11 @@ Likely causes, in order of probability:
 4. A regression test covers each state.
 
 ## Review Log
+
+### Step 1 report — 2026-10-23 — implementer
+
+- Reproduced with `tests/e2e/restoreVersion.write.spec.ts` at 375 / 768 / 1280 px. Cause 1 is confirmed: when a version differs from the current line only in status or breeding dates (for example the version before Start Breeding), the preview has no changes and the Restore button is disabled by design. A line that is Breeding but whose content differs restores normally; the button is not covered by anything (causes 3 and 4 not observed).
+- The old text did explain "Nothing to restore", but never mentioned status, so the disabled button looked broken.
+- Fix: the text now says that Restore is off because it does not change the status or breeding dates and points to Change Activity; a failed preview shows the error with a "Try again" button (it used to leave a dead dialog). Regression tests: status-only, content difference on a Breeding line, failed then successful preview.
+- Checks: `npm run test:e2e -- tests/e2e/restoreVersion.write.spec.ts` 185 passed (3 viewports); eslint, tsc, `check:public` ✅.
+- Follow-up: T-039 (Cancel Breeding) gives the missing way back to Current; update the dialog text to name it when T-039 lands.
