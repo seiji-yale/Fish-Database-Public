@@ -8,6 +8,8 @@ const binaryFixtures: Record<string, string> = {
   'tests/fixtures/gel.png': 'b87db0be682df2ce4bdff2529b564d3ec93c6fa187fdc91e8eb59c28631be03f',
   'tests/fixtures/gel2.png': 'bd4cf526d0a75c1ded221e29c5fab5e3bc4298711742619acc952648d21b2531',
   'tests/fixtures/method.pdf': '5a838678058f6de375e8635b5f2fea47a4e5f07cb1a882a44b10f39abc6f34ff',
+  // Synthetic: an `ABIF` header plus a few made-up bytes (T-038); not a real trace.
+  'tests/fixtures/trace.ab1': '1c3d695939e7d96e6cd620acf633a2ea5e3768ee45243765d28d837589acae9c',
   'tests/fixtures/not-an-image.exe':
     '7bc66557ad137c5286b2a4c9e78e1e3e23b98f84cf875d7d68ee75a353ded57d',
 };

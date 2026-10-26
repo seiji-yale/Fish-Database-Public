@@ -10,6 +10,7 @@
  */
 import { Hono } from 'hono';
 import { z } from 'zod';
+import type { UploadScope } from '../../domain/attachments';
 import { validateReference } from '../../domain/referenceEdit';
 import { nowIso, newId } from '../db/ids';
 import { insertAttachmentStatement } from '../db/queries/attachments';
@@ -71,6 +72,11 @@ function text(form: FormData, name: string): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
+/** What each kind of upload takes: a reference file anything, a sequence result sequence files, the rest images. */
+function scopeOf(kind: AttachmentKind): UploadScope {
+  return kind === 'reference_file' ? 'any' : kind === 'sequence_result' ? 'sequence' : 'images';
+}
+
 lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
   const author = await requireAuthor(c, 'data');
   let form: FormData;
@@ -100,7 +106,7 @@ lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
       lineId,
       file,
       thumb instanceof File ? thumb : null,
-      kind !== 'reference_file',
+      scopeOf(kind),
     );
     const row = attachmentRow(
       stored,
@@ -121,7 +127,7 @@ lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
     lineId,
     file,
     thumb instanceof File ? thumb : null,
-    true,
+    scopeOf(kind),
   );
   const row = attachmentRow(
     stored,

@@ -13,6 +13,13 @@ The SQL migrations in `worker/db/migrations/` define the authoritative columns a
 Child records use their own IDs and line foreign keys. Deleted records are retained with a deletion
 timestamp. A cryopreservation range is inclusive; its count is derived from the first and last ID.
 
+Attachments (`attachments`) keep the file name, MIME type, size and R2 key
+(`lines/<line_id>/<attachment_id>-<safe_name>`). `kind` is `gel_image`, `fluorescence_image`,
+`sequence_result`, `reference_file` or `other`. Sequence files (T-038) need no migration: on an ID
+protocol they are `sequence_result`, on a reference they are `reference_file`. Their stored MIME types
+are our own names (`application/x-abif`, `text/x-fasta`, `text/x-sequence`) because browsers report
+no usable type; they are always served as downloads.
+
 ## 5. Users and roles
 
 `users.role` is one of `admin`, `member`, `feeder`, `guest` (CHECK). Migration `0013_feeder_role.sql`

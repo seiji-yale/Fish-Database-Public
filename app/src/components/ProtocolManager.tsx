@@ -57,7 +57,7 @@ export function ProtocolManager({
 
   /** An image for one ID protocol (gel, fluorescence, ...): checked here, then uploaded. */
   function uploadImage(protocol: LineDetailProtocol, file: File) {
-    const check = checkUpload({ name: file.name, type: file.type, size: file.size }, true);
+    const check = checkUpload({ name: file.name, type: file.type, size: file.size }, 'images');
     if (!check.ok) {
       onChanged(check.message);
       return;
@@ -82,6 +82,29 @@ export function ProtocolManager({
         setProgress(null);
       }
     }, strings.uploadDone);
+  }
+
+  /** A sequence file (.ab1, .fasta, .seq) for one ID protocol: checked here, then uploaded. */
+  function uploadSequence(protocol: LineDetailProtocol, file: File) {
+    const check = checkUpload({ name: file.name, type: file.type, size: file.size }, 'sequence');
+    if (!check.ok) {
+      onChanged(check.message);
+      return;
+    }
+    setProgress(0);
+    void quick(async () => {
+      try {
+        return (await uploadFile(line.id, {
+          file,
+          kind: 'sequence_result',
+          protocolId: protocol.id,
+          expectedVersion: line.version,
+          onProgress: setProgress,
+        })) as ProtocolWriteResult;
+      } finally {
+        setProgress(null);
+      }
+    }, strings.sequenceFileUploaded);
   }
 
   function removeImage(attachment: LineDetailAttachment) {
@@ -146,6 +169,21 @@ export function ProtocolManager({
                   disabled={busy}
                   onPick={(file) => {
                     uploadImage(protocol, file);
+                  }}
+                  onError={onChanged}
+                />
+              )
+            : undefined
+        }
+        renderSequenceUpload={
+          canEdit
+            ? (protocol, hasFiles) => (
+                <FilePicker
+                  label={hasFiles ? strings.uploadAnotherSequenceFile : strings.uploadSequenceFile}
+                  sequenceOnly
+                  disabled={busy}
+                  onPick={(file) => {
+                    uploadSequence(protocol, file);
                   }}
                   onError={onChanged}
                 />

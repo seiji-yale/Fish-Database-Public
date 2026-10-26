@@ -7,6 +7,7 @@ import { useId, useRef } from 'react';
 import {
   ACCEPT_ATTRIBUTE,
   IMAGE_ACCEPT_ATTRIBUTE,
+  SEQUENCE_ACCEPT_ATTRIBUTE,
   uploadMessages,
 } from '../../../domain/attachments';
 import { convertHeicToJpeg, isHeic } from '../thumbnail';
@@ -15,6 +16,7 @@ import { strings } from '../strings';
 export function FilePicker({
   label = strings.uploadChoose,
   imagesOnly = false,
+  sequenceOnly = false,
   camera = false,
   primary = false,
   disabled = false,
@@ -23,6 +25,8 @@ export function FilePicker({
 }: {
   label?: string;
   imagesOnly?: boolean;
+  /** Sequence files only (.ab1, .fasta, .seq, ...). */
+  sequenceOnly?: boolean;
   /** Also offer "Take photo" (shown on touch screens only). */
   camera?: boolean;
   /** A prominent (blue) button, for the main upload spot under an image. */
@@ -35,7 +39,11 @@ export function FilePicker({
   const id = useId();
   const chooser = useRef<HTMLInputElement>(null);
   const photo = useRef<HTMLInputElement>(null);
-  const accept = imagesOnly ? IMAGE_ACCEPT_ATTRIBUTE : ACCEPT_ATTRIBUTE;
+  const accept = sequenceOnly
+    ? SEQUENCE_ACCEPT_ATTRIBUTE
+    : imagesOnly
+      ? IMAGE_ACCEPT_ATTRIBUTE
+      : ACCEPT_ATTRIBUTE;
   function picked(input: HTMLInputElement) {
     const file = input.files?.[0];
     input.value = '';

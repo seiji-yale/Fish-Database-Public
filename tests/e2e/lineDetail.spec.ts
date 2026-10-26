@@ -153,6 +153,7 @@ function attachment(id: string, isLatest: boolean, createdAt: string) {
     fileName: `${id}.png`,
     mimeType: 'image/png',
     caption: null,
+    sizeBytes: null,
     isLatest,
     createdAt,
   };

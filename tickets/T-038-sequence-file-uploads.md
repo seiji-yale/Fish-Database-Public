@@ -72,3 +72,11 @@ Mirror path check, restore test with a sequence file, docs folded.
 ## Review Log
 
 <!-- Append Step Reports, Step Reviews, Ticket Review, Owner feedback here, newest at the bottom. -->
+
+### Steps 1 to 4 — 2026-10-26 — implementer
+
+- Step 1: `domain/attachments.ts` gains `sequence-trace` and `sequence-text` kinds, the types `application/x-abif` (.ab1, .abi), `text/x-fasta` (.fasta, .fa, .fas) and `text/x-sequence` (.seq), `UploadScope` (`any` / `images` / `sequence`) in place of the old `imagesOnly` flag, `SEQUENCE_ACCEPT_ATTRIBUTE`, and content checks (ABIF header; FASTA first non-blank `>`; text without NUL and valid UTF-8, with a UTF-8 BOM allowed). The extension decides for sequence files because systems report `text/plain`, `chemical/x-fasta` and the like; the content check guards them. Table-driven tests; domain coverage stays 100 %.
+- Step 2: `storeUpload` reads the first 4 KB for the content check; the upload route picks the scope from the kind (`reference_file` any, `sequence_result` sequence files only, the rest images only). Stored as `sequence_result` on a protocol and `reference_file` on a reference; no migration. Served as downloads only (not an inline type, `nosniff`). Line detail attachments now carry `sizeBytes`. Route tests cover each extension, renamed binaries and text, a NUL byte, an empty file, 16 MB, slot separation, references, soft delete with History, and Guest access (refused on a protocol, open through a reference).
+- Step 3: `SequenceFiles` list on the protocol card (name, size, download, remove for editors) with its own upload button; the image list no longer shows sequence results. The reference form accepts the new types. `e2e/sequenceFiles.write.spec.ts` at 375, 768 and 1280 px covers the three acceptance cases.
+- Step 4: the mirror and the export copy attachments by `r2_key`, so no code change; added a mirror test and a `restore_images.py` test with `.ab1` and `.fasta`. Docs: `01-requirements.md`, `03-data-model.md`, `04-ui-spec.md`. No `user-guide.md` exists in this repository.
+- Note: a hand-made 16 MB file is refused by the size check before any upload starts.

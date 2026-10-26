@@ -8,6 +8,7 @@ export interface LineDetailAttachment {
   fileName: string | null;
   mimeType: string | null;
   caption: string | null;
+  sizeBytes: number | null;
   isLatest: boolean;
   createdAt: string;
 }

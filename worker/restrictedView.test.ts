@@ -61,6 +61,17 @@ async function setup(who: string) {
     admin.db,
     makeAttachment({ id: 'att-gel', owner_id: 'proto-x', r2_key: 'k-gel' }),
   );
+  await insertAttachment(
+    admin.db,
+    makeAttachment({
+      id: 'att-seq',
+      owner_id: 'proto-x',
+      kind: 'sequence_result',
+      file_name: 'trace.ab1',
+      mime_type: 'application/x-abif',
+      r2_key: 'k-seq',
+    }),
+  );
   await insertLineReference(
     admin.db,
     makeReference({ id: 'ref-file', line_id: 'fx-demo_c3', attachment_id: 'att-ref' }),
@@ -68,6 +79,7 @@ async function setup(who: string) {
   const objects = new Map([
     ['k-ref', new TextEncoder().encode('REF')],
     ['k-gel', new TextEncoder().encode('GEL')],
+    ['k-seq', new TextEncoder().encode('ABIF')],
   ]);
   const s = browser(admin.db, { FILES: fakeBucket(objects) });
   await s.actAs(who);
@@ -122,6 +134,7 @@ describe.each(['Guest', 'Feeder One'])('read routes for %s', (who) => {
     expect(reference.status).toBe(200);
     expect(await reference.text()).toBe('REF');
     expect((await s.call('/api/attachments/att-gel/file')).status).toBe(403);
+    expect((await s.call('/api/attachments/att-seq/file')).status).toBe(403);
     expect((await s.call('/api/attachments/missing/file')).status).toBe(403);
   });
 });
