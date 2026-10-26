@@ -7,6 +7,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { newPasswordProblem } from '../../domain/accounts';
 import { isMirrorStale } from '../../domain/mirror';
+import { capabilitiesOf, isRestricted } from '../../domain/permissions';
 import { getSetting } from '../db/queries/settings';
 import { getUserByName, getUserBySignInName, listUsers, publicUser } from '../db/queries/users';
 import type { UserRow } from '../db/types';
@@ -47,6 +48,7 @@ sessionRoutes.get('/session', async (c) => {
   return c.json({
     appName: appDisplayName(configuredAppName ?? c.env.APP_NAME),
     user: user === null ? null : { id: user.id, name: user.name, role: user.role },
+    capabilities: user === null ? [] : capabilitiesOf(user.role),
     mustChangePassword: user?.must_change_password === 1,
     // Everyone sees the banner while an Admin restores the database (T-021).
     readOnly: await isReadOnly(c.env.DB),
@@ -92,6 +94,7 @@ sessionRoutes.post('/session/password', async (c) => {
   const user = await signedInUser(c);
   if (user === null || acting.role === 'guest')
     throw new ApiError(403, 'FORBIDDEN', messages.guestCannotEdit);
+  // Feeders sign in with a personal account and change their own password (U-4).
   const problem = passwordError(input.newPassword);
   if (problem !== null) throw problem;
   if (!(await verifyPassword(input.currentPassword, user.password_hash)))
@@ -164,7 +167,12 @@ sessionRoutes.post('/guest/:token', async (c) => {
 /** Any signed-in lab member may pass the Guest URL on (ADR-0005); Guests already have it. */
 sessionRoutes.get('/guest-link', async (c) => {
   const acting = await actingUser(c);
-  if (acting.role === 'guest') throw new ApiError(403, 'FORBIDDEN', messages.guestCannotEdit);
+  if (isRestricted(acting.role))
+    throw new ApiError(
+      403,
+      'FORBIDDEN',
+      acting.role === 'guest' ? messages.guestCannotEdit : messages.restrictedApi,
+    );
   return c.json({ token: await guestLinkToken(c.env.DB) });
 });
 

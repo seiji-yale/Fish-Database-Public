@@ -1,14 +1,17 @@
+import type { Capability } from '../../domain/permissions';
 import { request } from './api';
 export interface SessionUser {
   id: string;
   name: string;
-  role: 'admin' | 'member' | 'guest';
+  role: 'admin' | 'member' | 'feeder' | 'guest';
 }
 export interface SessionState {
   /** Database display name configured by an Admin. */
   appName: string;
   /** Who is signed in on this browser (ADR-0005); null = nobody, the sign-in page shows. */
   user: SessionUser | null;
+  /** What the signed-in role may do (domain/permissions.ts); empty when nobody is signed in. */
+  capabilities: Capability[];
   /** The Admin gave this user an initial password: they must choose their own first. */
   mustChangePassword: boolean;
   /** An Admin is restoring the database: nobody can change data (T-021). */

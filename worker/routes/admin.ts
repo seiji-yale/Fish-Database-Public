@@ -28,7 +28,8 @@ import { listEnumerations } from '../db/queries/enumerations';
 import { getSetting } from '../db/queries/settings';
 import { getUserById, getUserByName, listUsers } from '../db/queries/users';
 import type { ActivityType, EnumerationKind } from '../db/types';
-import { actingUser, requireAuthor } from '../lib/attribution';
+import { requireAuthor } from '../lib/attribution';
+import type { actingUser } from '../lib/attribution';
 import { appDisplayName } from '../lib/appName';
 import { DELETED_TYPES, deletedItems, restoreDeleted } from '../lib/adminDeleted';
 import { newInvite, randomToken } from '../lib/accounts';
@@ -39,6 +40,7 @@ import { isReadOnly } from '../lib/readOnly';
 import { runMirror } from '../mirror/run';
 import { targetFromEnv } from '../mirror/target';
 import { ApiError } from '../lib/errors';
+import { requireCapability } from '../lib/permissions';
 import { messages } from '../lib/messages';
 import { hashPassword } from '../lib/passwords';
 import type { Bindings } from '../middleware/session';
@@ -48,8 +50,7 @@ export const adminRoutes = new Hono<{ Bindings: Bindings }>();
 type Ctx = Parameters<typeof actingUser>[0];
 
 async function requireAdmin(c: Ctx): Promise<void> {
-  const acting = await actingUser(c);
-  if (acting.role !== 'admin') throw new ApiError(403, 'ADMIN_ONLY', messages.adminOnly);
+  await requireCapability(c, 'admin.*');
 }
 
 adminRoutes.use('/admin/*', async (c, next) => {

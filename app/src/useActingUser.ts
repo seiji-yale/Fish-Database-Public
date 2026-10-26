@@ -4,6 +4,7 @@
  * `ACTING_USER_CHANGED`; the hook re-reads the session when it hears it.
  */
 import { useEffect, useState } from 'react';
+import type { Capability } from '../../domain/permissions';
 import { getSession, getUsers, type SessionUser } from './session';
 
 export const ACTING_USER_CHANGED = 'acting-user-changed';
@@ -17,14 +18,19 @@ export interface ActingUserState {
   name: string | null;
   /** The signed-in person's id (null for nobody). */
   id: string | null;
+  /** What this role may do; the API enforces the same table (BR-15). */
+  capabilities: Capability[];
 }
 
-export function useActingUser(): ActingUserState {
+export type ActingUser = ActingUserState & { can: (capability: Capability) => boolean };
+
+export function useActingUser(): ActingUser {
   const [state, setState] = useState<ActingUserState>({
     role: 'guest',
     users: [],
     name: null,
     id: null,
+    capabilities: [],
   });
 
   useEffect(() => {
@@ -38,6 +44,7 @@ export function useActingUser(): ActingUserState {
             users,
             name: session.user?.name ?? 'Guest',
             id: session.user?.id ?? null,
+            capabilities: session.capabilities,
           });
         })
         .catch(() => undefined);
@@ -52,5 +59,5 @@ export function useActingUser(): ActingUserState {
     };
   }, []);
 
-  return state;
+  return { ...state, can: (capability) => state.capabilities.includes(capability) };
 }

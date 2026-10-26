@@ -27,6 +27,7 @@ export const messages = {
   lineNotFound: 'This line does not exist. Go back to the line list and try again.',
   fileNotFound:
     'This file is not available. Reload the page, and ask the Admin if it is still missing.',
+  restrictedApi: 'This is not available in the Guest view.',
   adminOnly: 'Only an Admin can do this. Ask an Admin.',
   versionNotFound: 'This version does not exist. Reload the page and try again.',
   versionNotRestorable:
