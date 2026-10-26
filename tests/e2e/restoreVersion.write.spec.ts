@@ -32,7 +32,7 @@ test('T-040: Restore works on a Breeding line when the content differs', async (
   page,
 }, testInfo) => {
   await actAs(page, 'Bob');
-  const id = await createLine(page, unique(testInfo, 'rb'));
+  const id = await createLine(page, unique(testInfo, 't40-content'));
   await startBreeding(page, id, 1);
   await page.request.patch(`/api/lines/${id}`, { data: { expectedVersion: 2, gene: 'g2' } });
   await actAs(page, 'Admin');
@@ -50,7 +50,7 @@ test('T-040: when only the status differs, the dialog says why Restore is off', 
   page,
 }, testInfo) => {
   await actAs(page, 'Bob');
-  const id = await createLine(page, unique(testInfo, 'rn'));
+  const id = await createLine(page, unique(testInfo, 't40-status'));
   await startBreeding(page, id, 1);
   await actAs(page, 'Admin');
   await page.goto(`/lines/${id}`);
@@ -66,7 +66,7 @@ test('T-040: a failed preview shows the error and Try again loads it', async ({
   page,
 }, testInfo) => {
   await actAs(page, 'Bob');
-  const id = await createLine(page, unique(testInfo, 'rf'));
+  const id = await createLine(page, unique(testInfo, 't40-retry'));
   await page.request.patch(`/api/lines/${id}`, { data: { expectedVersion: 1, gene: 'g2' } });
   await actAs(page, 'Admin');
   await page.goto(`/lines/${id}`);
