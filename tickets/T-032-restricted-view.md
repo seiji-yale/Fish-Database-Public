@@ -2,7 +2,7 @@
 
 |                  |                                                                                    |
 | ---------------- | ---------------------------------------------------------------------------------- |
-| State            | Ready                                                                              |
+| State            | Done                                                                               |
 | Size             | L                                                                                  |
 | Phase            | 5 (Feeding Schedule & restricted view)                                             |
 | Depends on       | T-031                                                                              |
@@ -112,3 +112,8 @@ allow-list shaping and 403 refusals (ADR-0006, BR-15). Members and Admins see ex
 - Existing tests that read full data as a Guest now sign in as a Member; Guest-specific e2e tests were rewritten for the overview (`restrictedView.spec.ts` is new). Two e2e specs that mock `/api/session` now include `capabilities`.
 - Checks: `npm run typecheck`, `lint`, `test` (756 passed), `test:domain-coverage`, `check:english`, `check:public`, `check:free-tier` green; `npm run test:e2e` 348 passed, 25 skipped. One full run showed a single failure in `lineDetail.spec.ts` "two PCR protocols" on phone-375 that did not recur (3 repeats alone, then a full rerun green).
 - Not done: Feeder in the browser (no Feeder in the e2e seed; Feeder is covered by the route and response tests), owner acceptance on the preview, `check:python`.
+
+### Owner acceptance and release — 2026-10-26
+
+- Owner accepted all five criteria on the preview (branch build). PR #9 merged (merge commit ab07e37) after `check` and `secrets` passed.
+- Production deployed from `main` at ab07e37 (no migration); `/api/health` answers. Preview redeployed from `main`.

@@ -2,7 +2,7 @@
 
 |                  |                                                                                             |
 | ---------------- | ------------------------------------------------------------------------------------------- |
-| State            | Draft                                                                                       |
+| State            | Ready                                                                                       |
 | Size             | M                                                                                           |
 | Phase            | 5 (independent of T-031 … T-037; schedule it between T-032 and T-033 so no lane is blocked) |
 | Depends on       | — (builds on the attachments module, T-016)                                                 |
