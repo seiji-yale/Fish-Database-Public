@@ -30,10 +30,14 @@ export const exportSchema = z.object({
   lineVersions: z.array(row).default([]),
   activities: z.array(row).default([]),
   chatMessages: z.array(row).default([]),
+  // The Feeding Schedule (T-033, FR-FEED-26): every row, replaced and deleted ones included.
+  feedingAssignments: z.array(row).default([]),
+  scheduleEvents: z.array(row).default([]),
   settings: z.object({
     upcoming_breeding_months: z.string().nullable(),
     default_annealing_c: z.string().nullable(),
     default_cycles: z.string().nullable(),
+    feeding_schedule_notes: z.string().nullable().optional(),
     // Exports before ADR-0005 (2026-10-02) still carry the retired lab passphrase flag.
     lab_passphrase_enabled: z.boolean().optional(),
   }),

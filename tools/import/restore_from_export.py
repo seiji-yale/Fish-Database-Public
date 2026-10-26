@@ -2,8 +2,9 @@
 
 The file is the one the Dropbox mirror writes to `latest/` and `archive/<date>/`. Ids are kept, so a
 restored database is the same database: lines, ID methods, genotyping and cryo records, references,
-attachment rows, versions (history), activities, chat messages, users, lists and the three Admin
-numbers. Image thumbnails are not copied: restored attachments point at the original image only. Not in the export, so not restored: chat read marks and @mention notifications (everyone's
+attachment rows, versions (history), activities, chat messages, the Feeding Schedule (every day with its
+history, events, notes), users, lists and the three Admin numbers. Image thumbnails are not copied: restored
+attachments point at the original image only. Not in the export, so not restored: chat read marks and @mention notifications (everyone's
 old messages show as read-state "new"), the lab passphrase, the Admin password and the mirror's own
 bookkeeping. Images are files, not rows: `tools/mirror/restore_images.sh` copies them back to R2.
 
@@ -30,6 +31,8 @@ from sql_text import sql_insert, sql_literal
 
 # Deleted before a restore with --wipe, children first (foreign keys are immediate).
 WIPE_ORDER = (
+    "feeding_assignments",
+    "schedule_events",
     "chat_mentions",
     "chat_reads",
     "chat_read_state",
@@ -60,7 +63,17 @@ LINE_CHILDREN = (
     ("references", "line_references"),
 )
 
-SETTING_KEYS = ("upcoming_breeding_months", "default_annealing_c", "default_cycles")
+SETTING_KEYS = (
+    "upcoming_breeding_months",
+    "default_annealing_c",
+    "default_cycles",
+    "feeding_schedule_notes",
+)
+# Schedule tables in the export (older exports lack them: they restore as empty).
+SCHEDULE_LISTS = (
+    ("feedingAssignments", "feeding_assignments"),
+    ("scheduleEvents", "schedule_events"),
+)
 EMPTY_CHECK = (
     "SELECT (SELECT count(*) FROM lines) AS lines, (SELECT count(*) FROM activities) AS activities, "
     "(SELECT count(*) FROM chat_messages) AS chat_messages"
@@ -86,7 +99,8 @@ def validate(doc: object) -> dict:
     for key in ("lines", "users", "enumerations"):
         if not isinstance(doc.get(key), list):
             problems.append(f"`{key}` is missing or not a list")
-    for key in ("lineVersions", "activities", "chatMessages"):  # older exports lack these
+    # older exports lack these
+    for key in ("lineVersions", "activities", "chatMessages", *(k for k, _ in SCHEDULE_LISTS)):
         if key in doc and not isinstance(doc[key], list):
             problems.append(f"`{key}` is not a list")
     if not isinstance(doc.get("settings"), dict):
@@ -102,7 +116,8 @@ def validate(doc: object) -> dict:
             rows = entry.get(key)
             if not isinstance(rows, list) or not all(_is_row(r) for r in rows):
                 problems.append(f"line {name}: `{key}` is missing or has a row without an id")
-    for key in ("users", "enumerations", "lineVersions", "activities", "chatMessages"):
+    row_lists = ("users", "enumerations", "lineVersions", "activities", "chatMessages")
+    for key in (*row_lists, *(k for k, _ in SCHEDULE_LISTS)):
         if not all(_is_row(r) for r in doc.get(key, [])):
             problems.append(f"`{key}` has a row without an id")
     if problems:
@@ -153,6 +168,8 @@ def build_statements(doc: dict, wipe: bool) -> list[str]:
         ("chatMessages", "chat_messages"),
     ):
         statements.extend(sql_insert(table, row) for row in doc.get(key, []))
+    for key, table in SCHEDULE_LISTS:
+        statements.extend(sql_insert(table, row) for row in doc.get(key, []))
     for key in SETTING_KEYS:
         value = doc["settings"].get(key)
         if value is not None:
@@ -171,6 +188,8 @@ def counts(doc: dict) -> dict[str, int]:
     result["line_versions"] = len(doc.get("lineVersions", []))
     result["activities"] = len(doc.get("activities", []))
     result["chat_messages"] = len(doc.get("chatMessages", []))
+    for key, table in SCHEDULE_LISTS:
+        result[table] = len(doc.get(key, []))
     result["users"] = len(doc["users"])
     result["enumerations"] = len(doc["enumerations"])
     return result

@@ -16,6 +16,7 @@ import { linesRoutes } from './routes/lines';
 import { dashboardRoutes } from './routes/dashboard';
 import { sessionRoutes } from './routes/session';
 import { chatRoutes } from './routes/chat';
+import { feedingRoutes } from './routes/feeding';
 import { mirrorDirtyMarker } from './mirror/dirty';
 import { readOnlyGuard } from './lib/readOnly';
 import { scheduledMirror } from './mirror/run';
@@ -41,6 +42,7 @@ app.route('/api', lineAttachmentRoutes);
 app.route('/api', adminRoutes);
 app.route('/api', attachmentRoutes);
 app.route('/api', chatRoutes);
+app.route('/api', feedingRoutes);
 app.onError(handleError);
 
 /**

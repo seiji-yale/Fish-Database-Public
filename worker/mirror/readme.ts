@@ -16,8 +16,9 @@ latest/
   lines.csv             The Line List "All" view; opens in Excel.
   fish-database.json    Everything, including history and removed items (used to rebuild the app).
   id_protocols.csv, genotyping_records.csv, cryo_records.csv, cryo_vial_uses.csv,
-  line_references.csv, attachments.csv, chat_messages.csv, line_versions.csv, users.csv
-                        One table per file.
+  line_references.csv, attachments.csv, chat_messages.csv, line_versions.csv, users.csv,
+  feeding_assignments.csv, schedule_events.csv
+                        One table per file (the Feeding Schedule keeps every earlier value of a day).
   images/<line>/        Uploaded images and files, in one folder per line.
 archive/<date>/         A full copy taken every night. Copies older than 90 days are removed.
 logs/mirror.log         One line per copy run: when, ok or failed, how many files.

@@ -32,6 +32,8 @@ import {
   markMessageRead,
 } from './queries/chatReads';
 import { CRYO_VIAL_USES } from './queries/cryoVialUses';
+import { FEEDING_ASSIGNMENTS } from './queries/feedingAssignments';
+import { SCHEDULE_EVENTS } from './queries/scheduleEvents';
 import {
   CRYO_RECORDS,
   getCryoRecordById,
@@ -149,6 +151,8 @@ describe('row types match the DDL', () => {
     CHAT_READ_STATE,
     MIRROR_RUNS,
     IMPORT_RUNS,
+    FEEDING_ASSIGNMENTS,
+    SCHEDULE_EVENTS,
   ];
 
   it.each(specs.map((spec) => [spec.table, spec] as const))(
