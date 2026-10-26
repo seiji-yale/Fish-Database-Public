@@ -16,7 +16,10 @@ async function createLine(page: Page, name: string): Promise<string> {
 }
 
 async function startBreeding(page: Page, id: string, expectedVersion: number): Promise<void> {
-  const today = new Date().toISOString().slice(0, 10);
+  // The server's "today" is in America/New_York; UTC is a day ahead in the evening there.
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(
+    new Date(),
+  );
   const response = await page.request.post(`/api/lines/${id}/start-breeding`, {
     data: { expectedVersion, crossDate: today },
   });
