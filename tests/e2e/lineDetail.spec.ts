@@ -315,7 +315,7 @@ test('a Custom protocol lists its key/value pairs; a 200-letter sequence wraps w
   expect(await noHorizontalScroll(page)).toBeLessThanOrEqual(0);
 });
 
-test('protocol images: latest as a thumbnail, older ones behind an expander, lightbox closes on Escape', async ({
+test('protocol images: a gallery of the newest five, older ones behind an expander, lightbox closes on Escape', async ({
   page,
 }, testInfo) => {
   await page.route('**/api/attachments/*/file*', (route) =>
@@ -324,20 +324,25 @@ test('protocol images: latest as a thumbnail, older ones behind an expander, lig
   await mockLine(page, 'fx-demo_c3', (document) => {
     const protocol = document.protocols[0];
     if (protocol === undefined) return;
-    protocol.attachments = [
-      attachment('gel-old', false, '2026-01-01T00:00:00Z'),
-      attachment('gel-new', true, '2026-02-01T00:00:00Z'),
-    ];
+    protocol.attachments = [1, 2, 3, 4, 5, 6, 7].map((day) =>
+      attachment(`gel-${String(day)}`, day === 7, `2026-01-0${String(day)}T00:00:00Z`),
+    );
   });
   await page.goto('/lines/fx-demo_c3');
   const area = protocolArea(page, testInfo);
-  const thumbnail = area.getByRole('button', { name: 'View image: gel-new.png' });
+  await expect(area.getByText('Images', { exact: true }).first()).toBeVisible();
+  const thumbnail = area.getByRole('button', { name: 'View image: gel-7.png' });
   await expect(thumbnail).toBeVisible();
-  await expect(area.getByRole('button', { name: 'View image: gel-old.png' })).toBeHidden();
-  await area.getByText('Other images (1)').click();
-  await expect(area.getByRole('button', { name: 'View image: gel-old.png' })).toBeVisible();
+  for (const day of [3, 4, 5, 6])
+    await expect(
+      area.getByRole('button', { name: `View image: gel-${String(day)}.png` }),
+    ).toBeVisible();
+  await expect(area.getByRole('button', { name: 'View image: gel-2.png' })).toBeHidden();
+  await area.getByText('Other images (2)').click();
+  await expect(area.getByRole('button', { name: 'View image: gel-2.png' })).toBeVisible();
+  await expect(area.getByRole('button', { name: 'View image: gel-1.png' })).toBeVisible();
   await thumbnail.click();
-  const dialog = page.getByRole('dialog', { name: 'gel-new.png' });
+  const dialog = page.getByRole('dialog', { name: 'gel-7.png' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Close image' })).toBeFocused();
   await page.keyboard.press('Escape');

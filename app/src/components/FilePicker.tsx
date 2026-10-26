@@ -11,6 +11,7 @@ import {
   uploadMessages,
 } from '../../../domain/attachments';
 import { convertHeicToJpeg, isHeic } from '../thumbnail';
+import { IconButton } from './Icons';
 import { strings } from '../strings';
 
 export function FilePicker({
@@ -21,6 +22,7 @@ export function FilePicker({
   primary = false,
   disabled = false,
   multiple = false,
+  iconOnly = false,
   onPick,
   onPickMany,
   onError,
@@ -36,6 +38,8 @@ export function FilePicker({
   disabled?: boolean;
   /** Choose several files at once; `onPick` is then called once per file, in the order chosen. */
   multiple?: boolean;
+  /** An upload icon (and a camera icon) instead of text buttons; `label` is its name and tooltip. */
+  iconOnly?: boolean;
   onPick: (file: File) => void;
   /** With `multiple`: all chosen files in one call (instead of `onPick` once per file). */
   onPickMany?: ((files: File[]) => void) | undefined;
@@ -85,16 +89,28 @@ export function FilePicker({
           picked(event.target);
         }}
       />
-      <button
-        type="button"
-        className={primary ? 'button--primary' : undefined}
-        disabled={disabled}
-        onClick={() => {
-          chooser.current?.click();
-        }}
-      >
-        {label}
-      </button>
+      {iconOnly ? (
+        <IconButton
+          icon="upload"
+          label={label}
+          disabled={disabled}
+          primary={primary}
+          onClick={() => {
+            chooser.current?.click();
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className={primary ? 'button--primary' : undefined}
+          disabled={disabled}
+          onClick={() => {
+            chooser.current?.click();
+          }}
+        >
+          {label}
+        </button>
+      )}
       {camera ? (
         <>
           <input
@@ -111,16 +127,29 @@ export function FilePicker({
               picked(event.target);
             }}
           />
-          <button
-            type="button"
-            className="file-picker__camera"
-            disabled={disabled}
-            onClick={() => {
-              photo.current?.click();
-            }}
-          >
-            {strings.uploadTakePhoto}
-          </button>
+          {iconOnly ? (
+            <span className="file-picker__camera">
+              <IconButton
+                icon="camera"
+                label={strings.uploadTakePhoto}
+                disabled={disabled}
+                onClick={() => {
+                  photo.current?.click();
+                }}
+              />
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="file-picker__camera"
+              disabled={disabled}
+              onClick={() => {
+                photo.current?.click();
+              }}
+            >
+              {strings.uploadTakePhoto}
+            </button>
+          )}
         </>
       ) : null}
     </span>

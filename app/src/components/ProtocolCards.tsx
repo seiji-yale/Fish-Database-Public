@@ -10,6 +10,7 @@ import { strings } from '../strings';
 import type { LineDetailAttachment, LineDetailProtocol } from '../lineDetailApi';
 import { safeExternalUrl } from '../lineDetailFormat';
 import { AttachmentImages } from './Images';
+import { IconButton } from './Icons';
 import { SequenceFiles } from './SequenceFiles';
 
 function str(fields: Record<string, unknown>, key: string): string | null {
@@ -56,20 +57,17 @@ function SequenceField({ label, value: stored }: { label: string; value: string 
   }
 
   return (
-    <div className="sequence-field">
+    <div className="detail-field sequence-field">
       <strong className="sequence-field__label">{label}</strong>
       <div className="sequence-field__content">
         <code className="sequence-field__value">{value}</code>
-        <button
-          type="button"
-          className="sequence-field__copy"
-          aria-label={strings.copyAria(label)}
+        <IconButton
+          icon="copy"
+          label={strings.copyAria(label)}
           onClick={() => {
             void copy();
           }}
-        >
-          {strings.copy}
-        </button>
+        />
       </div>
       {copied ? (
         <Toast
@@ -221,7 +219,11 @@ function ProtocolBody({
         <FluorescenceFields fields={protocol.fields} />
       ) : null}
       {protocol.protocolType === 'custom' ? <CustomFields fields={protocol.fields} /> : null}
-      {protocol.notes !== null ? <Field label={strings.columnNotes}>{protocol.notes}</Field> : null}
+      {protocol.notes !== null ? (
+        <Field label={strings.columnNotes} wide>
+          {protocol.notes}
+        </Field>
+      ) : null}
       <AttachmentImages
         attachments={otherAttachments}
         showEmptyHint={protocol.protocolType !== 'none' && protocol.protocolType !== 'tails'}

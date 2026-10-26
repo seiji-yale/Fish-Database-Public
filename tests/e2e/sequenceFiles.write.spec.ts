@@ -62,7 +62,7 @@ test('AC1: upload .ab1, .fasta and .seq to an ID protocol; each lists and downlo
     await expect(link).toBeVisible();
     expect(await downloaded(page, link)).toEqual(readFileSync(path(name)));
   }
-  await expect(area).toContainText(/\(\d+ B\)/);
+  await expect(area).toContainText(/\d+ B/);
   await expect(page.locator('#history .history-item').first()).toContainText(
     'Uploaded sequence result for PCR.',
   );
@@ -71,7 +71,13 @@ test('AC1: upload .ab1, .fasta and .seq to an ID protocol; each lists and downlo
   await noSideScroll(page);
 
   await area.getByRole('button', { name: 'Remove trace.ab1' }).click();
-  await expect(toast(page, 'Image removed')).toBeVisible();
+  await expect(dialog(page)).toContainText('Remove this file?');
+  await expect(dialog(page)).toContainText('trace.ab1');
+  await dialog(page).getByRole('button', { name: 'Cancel' }).click();
+  await expect(area.getByRole('link', { name: 'Download trace.ab1' })).toBeVisible();
+  await area.getByRole('button', { name: 'Remove trace.ab1' }).click();
+  await dialog(page).getByRole('button', { name: 'Remove' }).click();
+  await expect(toast(page, 'Sequence file removed')).toBeVisible();
   await expect(area.getByRole('link', { name: 'Download trace.ab1' })).toHaveCount(0);
   await expect(area.getByRole('link', { name: 'Download read.seq' })).toBeVisible();
   await page.reload();

@@ -30,12 +30,22 @@ async function protocolPanel(page: Page, label: string): Promise<Locator> {
   }
   const card = page.locator('#protocols .data-card').filter({ hasText: label });
   // Phone: only current methods are open; open this one when it is folded.
-  if ((await card.locator('details').getAttribute('open')) === null)
-    await card.locator('summary').click();
+  if ((await card.locator('details.protocol-card').getAttribute('open')) === null)
+    await card.locator('details.protocol-card > summary').click();
   return card;
 }
 
 const dialog = (page: Page) => page.getByRole('dialog');
+
+/** Opens the "⋯" menu of a protocol panel and picks one item (Set as current, Move up, Remove, ...). */
+async function menuItem(panel: Locator, name: string): Promise<void> {
+  await panel.locator('.row-menu summary').first().click();
+  await panel
+    .page()
+    .locator('.row-menu__items:visible')
+    .getByRole('button', { name, exact: true })
+    .click();
+}
 const toast = (page: Page, text: string) => page.getByRole('status').filter({ hasText: text });
 
 test('add a second PCR, edit its annealing temperature, see it in History', async ({
@@ -123,17 +133,17 @@ test('Custom protocol with three fields: set as current, reorder, remove, Histor
   // Both methods are current now; take the mark off the first PCR, then move the Custom one up.
   await expect(page.locator('#summary')).toContainText('PCR, HRM assay');
   const pcr = await protocolPanel(page, 'PCR');
-  await pcr.getByRole('button', { name: 'Remove from current' }).click();
+  await menuItem(pcr, 'Remove from current');
   await expect(toast(page, 'Current ID methods changed (version 3)')).toBeVisible();
   await expect(page.locator('#summary')).not.toContainText('PCR, HRM assay');
   const second = await protocolPanel(page, 'HRM assay');
-  await second.getByRole('button', { name: 'Move up' }).click();
+  await menuItem(second, 'Move up');
   await expect(toast(page, 'ID methods reordered (version 4)')).toBeVisible();
   await expect(page.locator('#protocols .data-card').first()).toContainText('HRM assay');
 
   // Remove asks for confirmation; the card is gone and History has the entry.
   const removable = await protocolPanel(page, 'HRM assay');
-  await removable.getByRole('button', { name: 'Remove', exact: true }).click();
+  await menuItem(removable, 'Remove');
   await expect(dialog(page)).toContainText('The Admin can bring it back.');
   await dialog(page).getByRole('button', { name: 'Remove ID method' }).click();
   await expect(toast(page, 'ID method removed (version 5)')).toBeVisible();

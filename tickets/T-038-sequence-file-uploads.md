@@ -87,3 +87,11 @@ Mirror path check, restore test with a sequence file, docs folded.
 - File name on a reference: the list (and the Guest/Feeder overview card) shows the uploaded file name with its extension under the title; choosing one file fills an empty title with the file name.
 - Link label: a web link says `Open`, an uploaded file says `Download` (list and overview card).
 - Tests: e2e for several files, title fill, the file name under the title and `Open` for a link; existing e2e updated for the `Download` label; overview keys now include `fileName`.
+
+### Owner feedback round 2 — 2026-10-26 — implementer
+
+- Icons: new `Icons.tsx` (upload, camera, trash, pencil, copy) and an icon-only button with an accessible name and a tooltip. Upload is an icon in the heading of the Images and Sequence files boxes (and a camera icon on phones); remove is a trash icon on each picture and file row; copy is an icon. "Upload another ..." text buttons are gone.
+- Confirmation: removing a gel image or a sequence file asks "Remove this file?" first (Cancel keeps it); the message says the file stays in storage and History records the change.
+- ID Protocols design: every item is one box of the same look in a grid (labels inside the box, sequences with their copy icon, long ones on a full row). "Latest image" is now "Images": a gallery of the newest five pictures in one row (about the same height as before), the rest under "Other images (n)".
+- Bottom row: `Edit` (with a pencil) and a `...` menu holding Mark as current / Remove from current, Move up, Move down and Remove. Move up/down are in the menu and only offered where they can apply.
+- Tests: e2e updated (menu, confirmation, gallery of seven pictures, icon buttons).

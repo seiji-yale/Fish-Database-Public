@@ -7,12 +7,16 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import type { LineDetailAttachment } from '../lineDetailApi';
 import { strings } from '../strings';
+import { Icon } from './Icons';
 
 export const attachmentUrl = (id: string, thumb = false): string =>
   `/api/attachments/${encodeURIComponent(id)}/file${thumb ? '?thumb=1' : ''}`;
 
 const isImage = (attachment: LineDetailAttachment): boolean =>
   attachment.mimeType?.startsWith('image/') === true;
+
+/** Images in the gallery before the rest fold into "Other images". */
+const GALLERY_SIZE = 5;
 
 const displayName = (attachment: LineDetailAttachment): string =>
   attachment.caption ?? attachment.fileName ?? strings.imageFallbackName;
@@ -150,7 +154,7 @@ function Thumbnail({
               onRemove(attachment);
             }}
           >
-            {strings.closeIcon}
+            <Icon name="trash" />
           </button>
         )}
       </span>
@@ -180,43 +184,57 @@ export function AttachmentImages({
 }: {
   attachments: readonly LineDetailAttachment[];
   showEmptyHint?: boolean;
-  /** Given to people who may edit: the upload control shown right under the images (T-016). */
+  /** Given to people who may edit: the upload control shown in the heading row (T-016). */
   uploader?: ((hasImages: boolean) => ReactNode) | undefined;
-  /** Given to people who may edit: shows a "Remove image" button under each image. */
+  /** Given to people who may edit: a remove icon on each image. */
   onRemove?: ((attachment: LineDetailAttachment) => void) | undefined;
 }) {
   const images = attachments
     .filter(isImage)
-    // The newest image is the latest: a protocol card also shows the gel images of the genotyping
-    // records done with it (T-016), so `isLatest` alone (per owner) cannot decide.
+    // Newest first: a protocol card also shows the gel images of the genotyping records done with
+    // it (T-016), so `isLatest` alone (per owner) cannot decide the order.
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const files = attachments.filter((attachment) => !isImage(attachment));
-  const [latest, ...previous] = images;
+  const shown = images.slice(0, GALLERY_SIZE);
+  const rest = images.slice(GALLERY_SIZE);
 
-  if (latest === undefined && files.length === 0)
+  if (images.length === 0 && files.length === 0)
     return showEmptyHint ? (
-      <>
+      <div className="detail-field detail-field--block image-gallery">
+        <div className="field-head">
+          <strong>{strings.imagesHeading}</strong>
+          {uploader === undefined ? null : (
+            <span className="field-head__actions">{uploader(false)}</span>
+          )}
+        </div>
         <p className="image-empty">{strings.noImageYet}</p>
-        {uploader === undefined ? null : <div className="image-upload">{uploader(false)}</div>}
-      </>
+      </div>
     ) : null;
   return (
-    <div className="detail-field detail-field--block">
-      <strong>{latest === undefined ? strings.imagesHeading : strings.latestImage}</strong>
-      {latest === undefined ? null : <Thumbnail attachment={latest} onRemove={onRemove} />}
-      {previous.length > 0 ? (
+    <div className="detail-field detail-field--block image-gallery">
+      <div className="field-head">
+        <strong>{strings.imagesHeading}</strong>
+        {uploader === undefined ? null : (
+          <span className="field-head__actions">{uploader(images.length > 0)}</span>
+        )}
+      </div>
+      {shown.length === 0 ? null : (
+        <div className="thumb-grid">
+          {shown.map((attachment) => (
+            <Thumbnail key={attachment.id} attachment={attachment} onRemove={onRemove} />
+          ))}
+        </div>
+      )}
+      {rest.length > 0 ? (
         <details>
-          <summary>{strings.previousImages(previous.length)}</summary>
-          <div className="thumb-row">
-            {previous.map((attachment) => (
+          <summary>{strings.previousImages(rest.length)}</summary>
+          <div className="thumb-grid">
+            {rest.map((attachment) => (
               <Thumbnail key={attachment.id} attachment={attachment} onRemove={onRemove} />
             ))}
           </div>
         </details>
       ) : null}
-      {uploader === undefined ? null : (
-        <div className="image-upload">{uploader(latest !== undefined)}</div>
-      )}
       {files.map((attachment) => (
         <a key={attachment.id} href={attachmentUrl(attachment.id)} target="_blank" rel="noreferrer">
           {`${strings.openFile}: ${displayName(attachment)}`}

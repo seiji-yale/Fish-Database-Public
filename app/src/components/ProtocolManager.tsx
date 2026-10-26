@@ -15,6 +15,9 @@ import { reorderProtocols, setCurrentProtocol, type ProtocolWriteResult } from '
 import { strings } from '../strings';
 import { removeAttachment, uploadFile } from '../uploadApi';
 import { FilePicker } from './FilePicker';
+import { Icon } from './Icons';
+import { RowMenu } from './RowMenu';
+import { ConfirmDialog } from './shared';
 import { ProtocolDialog, RemoveProtocolDialog } from './ProtocolDialogs';
 import { ProtocolsSection } from './ProtocolCards';
 
@@ -35,6 +38,8 @@ export function ProtocolManager({
 }) {
   const [editing, setEditing] = useState<LineDetailProtocol | null>(null);
   const [removing, setRemoving] = useState<LineDetailProtocol | null>(null);
+  /** An image or sequence file waiting for the "Remove this file?" answer. */
+  const [removingFile, setRemovingFile] = useState<LineDetailAttachment | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [progressFile, setProgressFile] = useState<{ number: number; of: number } | null>(null);
@@ -126,7 +131,9 @@ export function ProtocolManager({
         removeAttachment(line.id, attachment.id, {
           expectedVersion: line.version,
         }) as Promise<ProtocolWriteResult>,
-      strings.uploadRemoveDone,
+      attachment.kind === 'sequence_result'
+        ? strings.sequenceFileRemoved
+        : strings.uploadRemoveDone,
     );
   }
 
@@ -172,16 +179,16 @@ export function ProtocolManager({
       )}
       <ProtocolsSection
         protocols={line.protocols}
-        onRemoveImage={canEdit ? removeImage : undefined}
+        onRemoveImage={canEdit ? setRemovingFile : undefined}
         renderUpload={
           canEdit
-            ? (protocol, hasImages) => (
+            ? (protocol) => (
                 <FilePicker
-                  label={hasImages ? strings.uploadAnotherImage : strings.uploadImage}
+                  label={strings.uploadImage}
+                  iconOnly
                   imagesOnly
                   multiple
                   camera
-                  primary
                   disabled={busy}
                   onPick={() => undefined}
                   onPickMany={(files) => {
@@ -194,9 +201,10 @@ export function ProtocolManager({
         }
         renderSequenceUpload={
           canEdit
-            ? (protocol, hasFiles) => (
+            ? (protocol) => (
                 <FilePicker
-                  label={hasFiles ? strings.uploadAnotherSequenceFile : strings.uploadSequenceFile}
+                  label={strings.uploadSequenceFile}
+                  iconOnly
                   sequenceOnly
                   multiple
                   disabled={busy}
@@ -219,59 +227,86 @@ export function ProtocolManager({
                 >
                   <button
                     type="button"
+                    className="protocol-actions__edit"
                     onClick={() => {
                       setEditing(protocol);
                     }}
                   >
+                    <Icon name="pencil" />
                     {strings.protocolActionEdit}
                   </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => {
-                      void quick(
-                        () =>
-                          setCurrentProtocol(line.id, protocol.id, {
-                            expectedVersion: line.version,
-                            current: !protocol.isCurrent,
-                          }),
-                        strings.protocolDoneCurrent,
-                      );
-                    }}
-                  >
-                    {protocol.isCurrent ? strings.protocolUnsetCurrent : strings.protocolSetCurrent}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy || index === 0}
-                    onClick={() => {
-                      move(protocol, -1);
-                    }}
-                  >
-                    {strings.protocolMoveUp}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy || index === count - 1}
-                    onClick={() => {
-                      move(protocol, 1);
-                    }}
-                  >
-                    {strings.protocolMoveDown}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRemoving(protocol);
-                    }}
-                  >
-                    {strings.protocolRemoveAction}
-                  </button>
+                  <RowMenu
+                    label={strings.protocolMoreActions(protocol.label)}
+                    items={[
+                      {
+                        label: protocol.isCurrent
+                          ? strings.protocolUnsetCurrent
+                          : strings.protocolSetCurrent,
+                        onSelect: () => {
+                          void quick(
+                            () =>
+                              setCurrentProtocol(line.id, protocol.id, {
+                                expectedVersion: line.version,
+                                current: !protocol.isCurrent,
+                              }),
+                            strings.protocolDoneCurrent,
+                          );
+                        },
+                      },
+                      ...(index === 0
+                        ? []
+                        : [
+                            {
+                              label: strings.protocolMoveUp,
+                              onSelect: () => {
+                                move(protocol, -1);
+                              },
+                            },
+                          ]),
+                      ...(index === count - 1
+                        ? []
+                        : [
+                            {
+                              label: strings.protocolMoveDown,
+                              onSelect: () => {
+                                move(protocol, 1);
+                              },
+                            },
+                          ]),
+                      {
+                        label: strings.protocolRemoveAction,
+                        danger: true,
+                        onSelect: () => {
+                          setRemoving(protocol);
+                        },
+                      },
+                    ]}
+                  />
                 </div>
               )
             : undefined
         }
       />
+      {removingFile === null ? null : (
+        <ConfirmDialog
+          title={strings.attachmentRemoveTitle}
+          confirmLabel={strings.attachmentRemoveConfirm}
+          onCancel={() => {
+            setRemovingFile(null);
+          }}
+          onConfirm={() => {
+            const file = removingFile;
+            setRemovingFile(null);
+            removeImage(file);
+          }}
+        >
+          <p>
+            {strings.attachmentRemoveBody(
+              removingFile.caption ?? removingFile.fileName ?? strings.imageFallbackName,
+            )}
+          </p>
+        </ConfirmDialog>
+      )}
       {adding ? (
         <ProtocolDialog
           {...shared}
