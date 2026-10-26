@@ -2,7 +2,7 @@
 
 |                  |                                                                                             |
 | ---------------- | ------------------------------------------------------------------------------------------- |
-| State            | Ready                                                                                       |
+| State            | Done                                                                                        |
 | Size             | M                                                                                           |
 | Phase            | 5 (independent of T-031 … T-037; schedule it between T-032 and T-033 so no lane is blocked) |
 | Depends on       | — (builds on the attachments module, T-016)                                                 |
@@ -102,3 +102,8 @@ Mirror path check, restore test with a sequence file, docs folded.
 - History: `Show changes` and `Restore this version` are icons. The Restore icon is now offered to every full reader (not only Admins) on all but the newest version; a Member who tries it gets "Only an Admin can do this" in the dialog (the preview is readable by Members).
 - Sequence file notes: a note per file (up to 500 characters) saying what the file is. Choosing files opens a dialog with a note field per file before the upload; a pencil on each row edits or clears the note later (`PATCH /api/lines/:id/attachments/:aid`, sequence results only, one line version, History "Updated the note of sequence result ..."). The list shows the file name, size and the note under it; the note is stored in `attachments.caption`, so no migration. History names a removed sequence file by its file name.
 - Tests: route tests for the note (upload, edit, clear, too long, stale version, gel image refused), write-route and route-coverage tables, e2e for the dialog, the note under the name and editing.
+
+### Owner acceptance and release — 2026-10-26
+
+- Owner accepted all criteria and the follow-up changes on the preview. PR #11 merged (merge commit c97f9e8) after `check` and `secrets` passed.
+- Production deployed from `main` at c97f9e8 (no migration); `/api/health` answers. Preview redeployed from `main`.

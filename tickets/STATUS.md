@@ -14,7 +14,7 @@ Migration numbers follow the repository: 0012 is taken (`0012_cryo_use_undo`), s
 | T-035  | Monthly summary export and Notes & links                 | Draft | T-034      |
 | T-036  | Google Sheet import tool and cut-over                    | Draft | T-033      |
 | T-037  | Schedule events, weekly repeat                           | Draft | T-034      |
-| T-038  | Sequence file uploads (.ab1 / .fasta / .seq)             | Ready | —          |
+| T-038  | Sequence file uploads (.ab1 / .fasta / .seq)             | Done  | —          |
 | T-039  | Undo Start Breeding (Breeding to Current)                | Done  | —          |
 | T-040  | Restore Version dialog: Restore button cannot be pressed | Done  | —          |
 
