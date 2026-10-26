@@ -24,7 +24,7 @@ export interface GenotypingInput {
   newDob?: string | null;
 }
 
-export type UserRole = 'admin' | 'member' | 'guest';
+export type UserRole = 'admin' | 'member' | 'feeder' | 'guest';
 
 export interface ActingUser {
   id: string;

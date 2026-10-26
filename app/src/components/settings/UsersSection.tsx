@@ -9,14 +9,24 @@ import { strings } from '../../strings';
 import { USERS_CHANGED } from '../../useActingUser';
 import { TextField } from '../formFields';
 import { RowMenu } from '../RowMenu';
+import { ASSIGNABLE_ROLES } from '../../../../domain/permissions';
 import { ConfirmDialog } from '../shared';
 import { Modal } from '../Modal';
 import { PromptDialog } from './PromptDialog';
 import type { SectionProps } from './types';
 
+type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+const MAKE_LABEL: Record<AssignableRole, string> = {
+  admin: strings.userMakeAdmin,
+  member: strings.userMakeMember,
+  feeder: strings.userMakeFeeder,
+};
+
 const ROLE_LABEL = {
   admin: strings.roleAdmin,
   member: strings.roleMember,
+  feeder: strings.roleFeeder,
   guest: strings.roleGuest,
 } as const;
 
@@ -27,7 +37,7 @@ export function UsersSection({ overview, admin, reload: reloadOverview }: Sectio
     window.dispatchEvent(new Event(USERS_CHANGED));
   }
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'member' | 'admin'>('member');
+  const [role, setRole] = useState<AssignableRole>('member');
   const [initialPassword, setInitialPassword] = useState('');
   /** The invite link of the person just added (shown once: only its hash is stored). */
   const [invite, setInvite] = useState<{ name: string; token: string } | null>(null);
@@ -92,11 +102,12 @@ export function UsersSection({ overview, admin, reload: reloadOverview }: Sectio
             id="su-role"
             value={role}
             onChange={(event) => {
-              setRole(event.target.value as 'member' | 'admin');
+              setRole(event.target.value as AssignableRole);
             }}
           >
             <option value="member">{strings.roleMember}</option>
             <option value="admin">{strings.roleAdmin}</option>
+            <option value="feeder">{strings.roleFeeder}</option>
           </select>
           {errors['role'] === undefined ? null : <span role="alert">{errors['role']}</span>}
         </label>
@@ -167,19 +178,12 @@ export function UsersSection({ overview, admin, reload: reloadOverview }: Sectio
                         },
                       ]
                     : []),
-                  user.role === 'admin'
-                    ? {
-                        label: strings.userMakeMember,
-                        onSelect: () => {
-                          change(user, { role: 'member' });
-                        },
-                      }
-                    : {
-                        label: strings.userMakeAdmin,
-                        onSelect: () => {
-                          change(user, { role: 'admin' });
-                        },
-                      },
+                  ...ASSIGNABLE_ROLES.filter((role) => role !== user.role).map((role) => ({
+                    label: MAKE_LABEL[role],
+                    onSelect: () => {
+                      change(user, { role });
+                    },
+                  })),
                   user.isActive
                     ? {
                         label: strings.userDeactivate,

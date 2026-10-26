@@ -13,6 +13,16 @@ The SQL migrations in `worker/db/migrations/` define the authoritative columns a
 Child records use their own IDs and line foreign keys. Deleted records are retained with a deletion
 timestamp. A cryopreservation range is inclusive; its count is derived from the first and last ID.
 
+## 5. Users and roles
+
+`users.role` is one of `admin`, `member`, `feeder`, `guest` (CHECK). Migration `0013_feeder_role.sql`
+added `feeder` by rebuilding the table. D1 cannot switch foreign keys off, so the migration uses
+`PRAGMA defer_foreign_keys`; with it the usual "create `users_new`, drop `users`, rename" order fails at
+commit (the children reference the name `users`). The migration instead copies the rows to `users_copy`,
+drops `users`, creates `users` again and inserts the rows back, which cancels each child's pending
+violation. A missing row makes the commit fail. `worker/db/migrations.test.ts` proves ids, passwords
+and indexes are unchanged. Rehearse any future rebuild on a copy of production first.
+
 ## 6. Export
 
 The JSON and CSV export builders live in `worker/export/`. The JSON schema is defined in

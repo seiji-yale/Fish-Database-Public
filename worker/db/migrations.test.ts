@@ -247,4 +247,49 @@ describe('migration 0011 (imported task messages leave the chat)', () => {
     expect(ids("SELECT id FROM activities WHERE ref_type = 'chat_message'")).toEqual(['A-M-human']);
     expect(ids('SELECT id FROM lines')).toEqual(['L1']);
   });
+
+  it('T-031 migration rebuilds users with the feeder role and keeps data, ids and indexes', () => {
+    const sqlite = new DatabaseSync(':memory:');
+    sqlite.exec('PRAGMA foreign_keys = ON');
+    const files = migrationFiles();
+    for (const file of files.filter((name) => name < '0013')) {
+      sqlite.exec(readFileSync(MIGRATIONS_DIR + file, 'utf8'));
+    }
+    sqlite.exec(readFileSync(new URL('../../tests/fixtures/users.sql', import.meta.url), 'utf8'));
+    sqlite.exec(`UPDATE users SET password_hash = 'hash-' || id, session_epoch = 3, failed_logins = 2,
+      must_change_password = 1, locked_until = '2026-10-01T00:00:00Z' WHERE id = '${BOB}'`);
+    sqlite.exec(`INSERT INTO lines (id, name, status, created_at, created_by, updated_at, updated_by)
+      VALUES ('L1', 'demo_c3', 'Current', '2026-09-28T00:00:00Z', '${BOB}', '2026-09-28T00:00:00Z', '${BOB}')`);
+    const users = () => sqlite.prepare('SELECT * FROM users ORDER BY id').all();
+    const indexes = () =>
+      sqlite
+        .prepare(
+          "SELECT name, sql FROM sqlite_master WHERE type = 'index' AND tbl_name = 'users' ORDER BY name",
+        )
+        .all()
+        .map((row) => (row as { sql: string | null }).sql?.replace(/\s+/g, ' ') ?? null);
+    const before = users();
+    const indexesBefore = indexes();
+    expect(() => {
+      sqlite.exec("UPDATE users SET role = 'feeder' WHERE id = '" + BOB + "'");
+    }).toThrow();
+
+    // D1 applies one migration file as a single transaction; defer_foreign_keys lasts until it commits.
+    sqlite.exec('BEGIN');
+    sqlite.exec(readFileSync(MIGRATIONS_DIR + '0013_feeder_role.sql', 'utf8'));
+    sqlite.exec('COMMIT');
+
+    expect(users()).toEqual(before);
+    expect(indexes()).toEqual(indexesBefore);
+    expect(sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    expect(sqlite.prepare("SELECT created_by FROM lines WHERE id = 'L1'").get()).toEqual({
+      created_by: BOB,
+    });
+    sqlite.exec(`INSERT INTO users (id, name, role, created_at, updated_at)
+      VALUES ('F1', 'Feeder One', 'feeder', '2026-10-09T00:00:00Z', '2026-10-09T00:00:00Z')`);
+    expect(() => {
+      sqlite.exec(`INSERT INTO users (id, name, role, created_at, updated_at)
+        VALUES ('X1', 'Other', 'other', '2026-10-09T00:00:00Z', '2026-10-09T00:00:00Z')`);
+    }).toThrow();
+  });
 });

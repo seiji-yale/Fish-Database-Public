@@ -4,7 +4,7 @@ import { request } from './api';
 export interface AdminUser {
   id: string;
   name: string;
-  role: 'admin' | 'member' | 'guest';
+  role: 'admin' | 'member' | 'feeder' | 'guest';
   isActive: boolean;
   isBuiltin: boolean;
   /** Waiting for the first sign-in through an invite. */

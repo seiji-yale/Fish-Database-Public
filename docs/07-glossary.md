@@ -5,4 +5,5 @@
 - **IDed number:** The count of fish identified for the line; separate from freezer vial counts.
 - **Protocol:** A method and fields used to identify fish.
 - **Cryopreservation record:** A stored sample range, location, and date.
+- **Feeder:** A person who can see the line overview and the Feeding Schedule but cannot edit or chat.
 - **Guest:** A read-only session opened through a controlled link.
