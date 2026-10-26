@@ -328,7 +328,7 @@ export const strings = {
   restoreIntro:
     'This puts back the name, gene, DOB, notes, phenotypes and More attributes of that version as a new version. Nothing is deleted.',
   restoreNoDifference:
-    'Nothing to restore: the name, gene, DOB, notes, phenotypes and More attributes of that version are the same as now, so the Restore button is off. Restore does not change the status (Current, Breeding, Closed) or the breeding dates, and it does not undo genotyping, ID method or cryopreservation changes. Use Change Activity to change the status (for example Reopen This Line for a Closed line); undo a used vial from the Cryopreservation section.',
+    'Nothing to restore: the name, gene, DOB, notes, phenotypes and More attributes of that version are the same as now, so the Restore button is off. Restore does not change the status (Current, Breeding, Closed) or the breeding dates, and it does not undo genotyping, ID method or cryopreservation changes. Use Change Activity to change the status (for example Cancel Breeding for a Breeding line, or Reopen This Line for a Closed line); undo a used vial from the Cryopreservation section.',
   restoreRetry: 'Try again',
   restoreConfirm: 'Restore',
   restoreLoadFailed: 'The changes of this version could not be loaded. Try again.',
