@@ -4,6 +4,9 @@
  * the person gets the message before waiting for an upload).
  */
 
+/** A note on a sequence file says what the file is (which sample, which primer, ...). */
+export const MAX_NOTE_LENGTH = 500;
+
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 /** Thumbnails are made in the browser (≤ 400 px JPEG); anything larger is not a thumbnail. */
 export const MAX_THUMB_BYTES = 1024 * 1024;
@@ -62,6 +65,7 @@ export const uploadMessages = {
   wrongType:
     'This file type is not accepted. Use JPG, PNG, WebP, HEIC or PDF, sequence files (.ab1, .abi, .fasta, .fa, .fas, .seq) and DOCX for references. TIFF is not accepted: export the gel as PNG or JPG.',
   notImage: 'Choose an image (JPG, PNG, WebP or HEIC).',
+  noteTooLong: `A note can have at most ${String(MAX_NOTE_LENGTH)} characters.`,
   notSequence: 'Choose a sequence file (.ab1, .abi, .fasta, .fa, .fas or .seq).',
   contentMismatch: 'The file content does not match its type. Export it again and retry.',
   heicUnsupported:

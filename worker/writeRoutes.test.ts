@@ -13,6 +13,7 @@ const WRITE_ROUTES: [string, string][] = [
   ['PATCH', '/api/admin/settings'],
   ['PATCH', '/api/admin/users/:id'],
   ['PATCH', '/api/lines/:id'],
+  ['PATCH', '/api/lines/:id/attachments/:aid'],
   ['PATCH', '/api/lines/:id/cryo/:cid'],
   ['PATCH', '/api/lines/:id/protocols/:pid'],
   ['PATCH', '/api/lines/:id/references/:rid'],

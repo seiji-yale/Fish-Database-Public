@@ -60,6 +60,7 @@ const ROUTES: Record<string, RouteClass> = {
   'DELETE /api/lines/:id/cryo/:cid': 'write',
   'POST /api/lines/:id/attachments': 'write',
   'DELETE /api/lines/:id/attachments/:aid': 'write',
+  'PATCH /api/lines/:id/attachments/:aid': 'write',
   'POST /api/lines/:id/references': 'write',
   'PATCH /api/lines/:id/references/:rid': 'write',
   'DELETE /api/lines/:id/references/:rid': 'write',

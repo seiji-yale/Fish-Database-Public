@@ -95,3 +95,10 @@ Mirror path check, restore test with a sequence file, docs folded.
 - ID Protocols design: every item is one box of the same look in a grid (labels inside the box, sequences with their copy icon, long ones on a full row). "Latest image" is now "Images": a gallery of the newest five pictures in one row (about the same height as before), the rest under "Other images (n)".
 - Bottom row: `Edit` (with a pencil) and a `...` menu holding Mark as current / Remove from current, Move up, Move down and Remove. Move up/down are in the menu and only offered where they can apply.
 - Tests: e2e updated (menu, confirmation, gallery of seven pictures, icon buttons).
+
+### Owner feedback round 3 — 2026-10-26 — implementer
+
+- Reference links: `Open` (web link) and `Download` (file) are icon links with the same names and tooltips (list and overview card).
+- History: `Show changes` and `Restore this version` are icons. The Restore icon is now offered to every full reader (not only Admins) on all but the newest version; a Member who tries it gets "Only an Admin can do this" in the dialog (the preview is readable by Members).
+- Sequence file notes: a note per file (up to 500 characters) saying what the file is. Choosing files opens a dialog with a note field per file before the upload; a pencil on each row edits or clears the note later (`PATCH /api/lines/:id/attachments/:aid`, sequence results only, one line version, History "Updated the note of sequence result ..."). The list shows the file name, size and the note under it; the note is stored in `attachments.caption`, so no migration. History names a removed sequence file by its file name.
+- Tests: route tests for the note (upload, edit, clear, too long, stale version, gel image refused), write-route and route-coverage tables, e2e for the dialog, the note under the name and editing.

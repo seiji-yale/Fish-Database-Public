@@ -192,9 +192,11 @@ function ProtocolBody({
   onRemoveImage,
   renderUpload,
   renderSequenceUpload,
+  onEditNote,
 }: {
   protocol: LineDetailProtocol;
   actions: ReactNode;
+  onEditNote?: ((attachment: LineDetailAttachment) => void) | undefined;
   renderUpload?: ((hasImages: boolean) => ReactNode) | undefined;
   renderSequenceUpload?: ((hasFiles: boolean) => ReactNode) | undefined;
   onRemoveImage?: ((attachment: LineDetailAttachment) => void) | undefined;
@@ -233,6 +235,7 @@ function ProtocolBody({
       <SequenceFiles
         attachments={sequenceFiles}
         onRemove={onRemoveImage}
+        onEditNote={onEditNote}
         uploader={renderSequenceUpload}
       />
       {actions}
@@ -255,8 +258,11 @@ export function ProtocolsSection({
   onRemoveImage,
   renderUpload,
   renderSequenceUpload,
+  onEditSequenceNote,
 }: {
   protocols: readonly LineDetailProtocol[];
+  /** Given to people who may edit: opens the note of a sequence file. */
+  onEditSequenceNote?: ((attachment: LineDetailAttachment) => void) | undefined;
   /** The upload control for sequence files (T-038), for editors. */
   renderSequenceUpload?:
     ((protocol: LineDetailProtocol, hasFiles: boolean) => ReactNode) | undefined;
@@ -295,6 +301,7 @@ export function ProtocolsSection({
             protocol={selected}
             actions={renderActions?.(selected, protocols.indexOf(selected), protocols.length)}
             onRemoveImage={onRemoveImage}
+            onEditNote={onEditSequenceNote}
             renderUpload={
               renderUpload === undefined
                 ? undefined
@@ -322,6 +329,7 @@ export function ProtocolsSection({
                 protocol={protocol}
                 actions={renderActions?.(protocol, index, protocols.length)}
                 onRemoveImage={onRemoveImage}
+                onEditNote={onEditSequenceNote}
                 renderUpload={
                   renderUpload === undefined
                     ? undefined

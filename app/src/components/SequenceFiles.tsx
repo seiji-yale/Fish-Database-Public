@@ -11,15 +11,18 @@ import { IconButton } from './Icons';
 import { attachmentUrl } from './Images';
 
 const nameOf = (attachment: LineDetailAttachment): string =>
-  attachment.caption ?? attachment.fileName ?? strings.imageFallbackName;
+  attachment.fileName ?? strings.imageFallbackName;
 
 export function SequenceFiles({
   attachments,
   onRemove,
+  onEditNote,
   uploader,
 }: {
   attachments: readonly LineDetailAttachment[];
   onRemove?: ((attachment: LineDetailAttachment) => void) | undefined;
+  /** Given to people who may edit: a pencil on each row opens the note of that file. */
+  onEditNote?: ((attachment: LineDetailAttachment) => void) | undefined;
   /** The upload control for editors (shown in the heading row); told whether the list has files. */
   uploader?: ((hasFiles: boolean) => ReactNode) | undefined;
 }) {
@@ -39,15 +42,29 @@ export function SequenceFiles({
         <ul className="file-list">
           {attachments.map((attachment) => (
             <li key={attachment.id}>
-              <a
-                href={attachmentUrl(attachment.id)}
-                download={attachment.fileName ?? true}
-                aria-label={strings.sequenceFileDownload(nameOf(attachment))}
-              >
-                {nameOf(attachment)}
-              </a>
-              {attachment.sizeBytes === null ? null : (
-                <span className="file-list__size">{formatFileSize(attachment.sizeBytes)}</span>
+              <span className="file-list__main">
+                <a
+                  href={attachmentUrl(attachment.id)}
+                  download={attachment.fileName ?? true}
+                  aria-label={strings.sequenceFileDownload(nameOf(attachment))}
+                >
+                  {nameOf(attachment)}
+                </a>
+                {attachment.sizeBytes === null ? null : (
+                  <span className="file-list__size">{formatFileSize(attachment.sizeBytes)}</span>
+                )}
+                {attachment.caption === null ? null : (
+                  <span className="file-list__note">{attachment.caption}</span>
+                )}
+              </span>
+              {onEditNote === undefined ? null : (
+                <IconButton
+                  icon="pencil"
+                  label={strings.sequenceNoteEdit(nameOf(attachment))}
+                  onClick={() => {
+                    onEditNote(attachment);
+                  }}
+                />
               )}
               {onRemove === undefined ? null : (
                 <IconButton

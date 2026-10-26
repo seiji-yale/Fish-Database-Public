@@ -13,10 +13,11 @@ import type {
 } from '../lineDetailApi';
 import { reorderProtocols, setCurrentProtocol, type ProtocolWriteResult } from '../protocolsApi';
 import { strings } from '../strings';
-import { removeAttachment, uploadFile } from '../uploadApi';
+import { removeAttachment, updateAttachmentNote, uploadFile } from '../uploadApi';
 import { FilePicker } from './FilePicker';
 import { Icon } from './Icons';
 import { RowMenu } from './RowMenu';
+import { SequenceNoteDialog, SequenceUploadDialog } from './SequenceNoteDialogs';
 import { ConfirmDialog } from './shared';
 import { ProtocolDialog, RemoveProtocolDialog } from './ProtocolDialogs';
 import { ProtocolsSection } from './ProtocolCards';
@@ -40,6 +41,12 @@ export function ProtocolManager({
   const [removing, setRemoving] = useState<LineDetailProtocol | null>(null);
   /** An image or sequence file waiting for the "Remove this file?" answer. */
   const [removingFile, setRemovingFile] = useState<LineDetailAttachment | null>(null);
+  /** Sequence files chosen but not uploaded yet: the dialog asks for a note on each. */
+  const [pendingSequence, setPendingSequence] = useState<{
+    protocol: LineDetailProtocol;
+    files: File[];
+  } | null>(null);
+  const [notingFile, setNotingFile] = useState<LineDetailAttachment | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [progressFile, setProgressFile] = useState<{ number: number; of: number } | null>(null);
@@ -71,6 +78,7 @@ export function ProtocolManager({
     protocol: LineDetailProtocol,
     files: File[],
     scope: 'images' | 'sequence',
+    notes: readonly string[] = [],
   ) {
     const kind =
       scope === 'sequence'
@@ -98,6 +106,7 @@ export function ProtocolManager({
           kind,
           protocolId: protocol.id,
           expectedVersion: version,
+          ...((notes[index] ?? '') === '' ? {} : { caption: notes[index] ?? '' }),
           onProgress: setProgress,
         });
         version = result.version ?? version;
@@ -180,6 +189,7 @@ export function ProtocolManager({
       <ProtocolsSection
         protocols={line.protocols}
         onRemoveImage={canEdit ? setRemovingFile : undefined}
+        onEditSequenceNote={canEdit ? setNotingFile : undefined}
         renderUpload={
           canEdit
             ? (protocol) => (
@@ -210,7 +220,16 @@ export function ProtocolManager({
                   disabled={busy}
                   onPick={() => undefined}
                   onPickMany={(files) => {
-                    void uploadMany(protocol, files, 'sequence');
+                    // Refused files are named at once; the rest wait for their notes.
+                    const usable = files.filter((file) => {
+                      const check = checkUpload(
+                        { name: file.name, type: file.type, size: file.size },
+                        'sequence',
+                      );
+                      if (!check.ok) onChanged(`${file.name}: ${check.message}`);
+                      return check.ok;
+                    });
+                    if (usable.length > 0) setPendingSequence({ protocol, files: usable });
                   }}
                   onError={onChanged}
                 />
@@ -287,6 +306,40 @@ export function ProtocolManager({
             : undefined
         }
       />
+      {pendingSequence === null ? null : (
+        <SequenceUploadDialog
+          files={pendingSequence.files}
+          onCancel={() => {
+            setPendingSequence(null);
+          }}
+          onUpload={(notes) => {
+            const { protocol, files } = pendingSequence;
+            setPendingSequence(null);
+            void uploadMany(protocol, files, 'sequence', notes);
+          }}
+        />
+      )}
+      {notingFile === null ? null : (
+        <SequenceNoteDialog
+          attachment={notingFile}
+          busy={busy}
+          onCancel={() => {
+            setNotingFile(null);
+          }}
+          onSave={(note) => {
+            const file = notingFile;
+            setNotingFile(null);
+            void quick(
+              () =>
+                updateAttachmentNote(line.id, file.id, {
+                  expectedVersion: line.version,
+                  caption: note,
+                }) as Promise<ProtocolWriteResult>,
+              strings.sequenceNoteSaved,
+            );
+          }}
+        />
+      )}
       {removingFile === null ? null : (
         <ConfirmDialog
           title={strings.attachmentRemoveTitle}
@@ -302,7 +355,9 @@ export function ProtocolManager({
         >
           <p>
             {strings.attachmentRemoveBody(
-              removingFile.caption ?? removingFile.fileName ?? strings.imageFallbackName,
+              removingFile.kind === 'sequence_result'
+                ? (removingFile.fileName ?? strings.imageFallbackName)
+                : (removingFile.caption ?? removingFile.fileName ?? strings.imageFallbackName),
             )}
           </p>
         </ConfirmDialog>

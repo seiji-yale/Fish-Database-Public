@@ -538,7 +538,7 @@ test('History: every imported line shows one version with no changes; multi-vers
   ).toBeVisible();
   await history.getByRole('button', { name: 'Show changes' }).click();
   await expect(history.getByText('No field changes were recorded for this version.')).toBeVisible();
-  // Restore is for Admin only (T-012): nobody chosen (Guest) sees no button.
+  // Restore is not offered on the newest version (here the only one).
   await expect(history.getByRole('button', { name: /Restore this version/ })).toHaveCount(0);
 
   await mockLine(page, 'fx-demo_d4', (document) => {

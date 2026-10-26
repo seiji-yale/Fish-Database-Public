@@ -22,8 +22,9 @@ notes, and other attributes.
 
 ### 5.2 Identification
 
-Show protocol cards, fields, image attachments, a Sequence files list (name, size, download, remove
-for editors; no preview) and genotyping history.
+Show protocol cards, fields, image attachments, a Sequence files list (name, size, the note under the name, download; edit note and remove icons
+for editors; no preview). Upload, remove, copy, open/download and the History actions are icon buttons
+with a name and a tooltip; removing a file asks first and genotyping history.
 
 ### 5.3 Cryopreservation
 

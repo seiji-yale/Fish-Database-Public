@@ -555,6 +555,95 @@ describe('sequence files (T-038)', () => {
     expect((await listLineVersionsByLine(db, line.id))[0]?.change_type).toBe('protocol_changed');
   });
 
+  it('keeps a note given at upload, edits it, clears it, and refuses a long note or a gel image', async () => {
+    const { call, upload, base, protocolId, form, fieldsOf, attachments } = await setup();
+    const sent = await upload(
+      `${base}/attachments`,
+      form({
+        file: file(ABI, 'trace.ab1', ''),
+        kind: 'sequence_result',
+        protocolId,
+        expectedVersion: '1',
+        caption: 'Founder 3, reverse read',
+      }),
+    );
+    expect(sent.status).toBe(200);
+    const noteOf = async () => {
+      const detail = await (
+        await call(base)
+      ).json<{ protocols: { attachments: { id: string; caption: string | null }[] }[] }>();
+      return detail.protocols.flatMap((protocol) => protocol.attachments)[0];
+    };
+    const row = await noteOf();
+    expect(row?.caption).toBe('Founder 3, reverse read');
+
+    const edit = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 2, caption: '  Founder 3, forward read ' },
+      'PATCH',
+    );
+    expect(edit.status).toBe(200);
+    expect((await edit.json<WriteBody>()).summary).toMatch(
+      /^Updated the note of sequence result trace.ab1/,
+    );
+    expect((await noteOf())?.caption).toBe('Founder 3, forward read');
+
+    const cleared = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 3, caption: '' },
+      'PATCH',
+    );
+    expect(cleared.status).toBe(200);
+    expect((await noteOf())?.caption).toBeNull();
+
+    const long = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 4, caption: 'x'.repeat(501) },
+      'PATCH',
+    );
+    expect(long.status).toBe(400);
+    expect((await fieldsOf(long))['caption']).toMatch(/at most 500/);
+    const stale = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 1, caption: 'late' },
+      'PATCH',
+    );
+    expect(stale.status).toBe(409);
+
+    await upload(
+      `${base}/attachments`,
+      form({
+        file: file(PNG, 'g.png', 'image/png'),
+        kind: 'gel_image',
+        protocolId,
+        expectedVersion: '4',
+      }),
+    );
+    const gel = (await attachments(protocolId)).find((entry) => entry.kind === 'gel_image');
+    const refused = await call(
+      `${base}/attachments/${gel?.id ?? ''}`,
+      { expectedVersion: 5, caption: 'renamed' },
+      'PATCH',
+    );
+    expect(refused.status).toBe(400);
+    expect(
+      (await call(`${base}/attachments/nope`, { expectedVersion: 5, caption: 'x' }, 'PATCH'))
+        .status,
+    ).toBe(404);
+
+    const tooLongAtUpload = await upload(
+      `${base}/attachments`,
+      form({
+        file: file(ABI, 'again.ab1', ''),
+        kind: 'sequence_result',
+        protocolId,
+        expectedVersion: '5',
+        caption: 'y'.repeat(501),
+      }),
+    );
+    expect(tooLongAtUpload.status).toBe(400);
+  });
+
   it('lists the size of a sequence file in the line detail', async () => {
     const { call, upload, base, protocolId, form } = await setup();
     await upload(

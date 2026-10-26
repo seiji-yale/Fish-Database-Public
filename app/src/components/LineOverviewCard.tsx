@@ -4,6 +4,7 @@ import type { LineOverviewDocument } from '../lineDetailApi';
 import { safeExternalUrl } from '../lineDetailFormat';
 import { linesReturnUrl } from '../linesReturn';
 import { strings } from '../strings';
+import { IconLink } from './Icons';
 import { attachmentUrl } from './Images';
 import { Field, StatusBadge } from './shared';
 
@@ -74,14 +75,12 @@ export function LineOverviewCard({ line, hint }: { line: LineOverviewDocument; h
                   {href === null ? (
                     <span className="reference-item__missing">{strings.referenceMissingLink}</span>
                   ) : (
-                    <a
+                    <IconLink
+                      icon={url === null ? 'download' : 'open'}
+                      label={`${openLabel}: ${reference.title}`}
                       href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`${openLabel}: ${reference.title}`}
-                    >
-                      {openLabel}
-                    </a>
+                      newTab
+                    />
                   )}
                 </li>
               );

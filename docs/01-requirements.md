@@ -25,7 +25,9 @@ files: ABI traces (`.ab1`, `.abi`), FASTA (`.fasta`, `.fa`, `.fas`) and plain `.
 The API checks the content, not the name or the reported type: an ABI trace starts with `ABIF`, a FASTA
 file is text whose first non-blank character is `>`, a `.seq` file is non-empty text, and text must be
 UTF-8 without NUL bytes. Sequence files attach to ID protocols (a "Sequence files" list beside the
-gel images) and to references. They are downloaded, never displayed. Restricted roles (T-032) can
+gel images) and to references. Each sequence file on a protocol can carry a note (up to 500 characters) saying what it is; the note is
+asked for before the upload and can be edited later (`PATCH /api/lines/:id/attachments/:aid`, a line
+version). They are downloaded, never displayed. Restricted roles (T-032) can
 open a sequence file only through a reference.
 
 The application records revisions and uses soft deletion for line-related data. An optional Dropbox

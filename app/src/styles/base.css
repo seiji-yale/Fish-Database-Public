@@ -2616,3 +2616,20 @@ a.button--primary:hover {
   width: 2rem;
   min-height: 2rem;
 }
+.file-list__main {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  align-items: baseline;
+  min-width: 0;
+}
+.file-list__main .file-list__size {
+  margin-right: 0;
+}
+.file-list__note {
+  flex-basis: 100%;
+  color: var(--color-muted);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}

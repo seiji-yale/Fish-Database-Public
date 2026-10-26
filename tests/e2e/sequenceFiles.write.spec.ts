@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { actAs } from './auth';
-import type { Page, TestInfo } from '@playwright/test';
+import type { Locator, Page, TestInfo } from '@playwright/test';
 
 /** T-038: .ab1 / .fasta / .seq files on ID protocols and references. */
 function unique(testInfo: TestInfo, suffix: string): string {
@@ -32,6 +32,22 @@ async function downloaded(page: Page, link: ReturnType<Page['locator']>): Promis
   return readFileSync(saved);
 }
 
+const SEQUENCE_INPUT =
+  '#protocols input[type="file"][aria-label^="Upload"][aria-label$="sequence file"]';
+
+/** Chooses sequence files, answers the notes dialog (a note per file name) and presses Upload. */
+async function uploadSequence(
+  page: Page,
+  files: Parameters<Locator['setInputFiles']>[0],
+  notes: Record<string, string> = {},
+) {
+  await page.locator(SEQUENCE_INPUT).first().setInputFiles(files);
+  await expect(dialog(page)).toContainText(/Upload (this|\d+) sequence file/);
+  for (const [name, note] of Object.entries(notes))
+    await dialog(page).getByLabel(`Note for ${name}`).fill(note);
+  await dialog(page).getByRole('button', { name: 'Upload', exact: true }).click();
+}
+
 async function noSideScroll(page: Page) {
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -47,10 +63,11 @@ test('AC1: upload .ab1, .fasta and .seq to an ID protocol; each lists and downlo
   await page.goto(`/lines/${id}`);
   const area = page.locator('#protocols .sequence-files:visible').first();
   for (const [index, name] of FILES.entries()) {
-    await page
-      .locator('#protocols input[type="file"][aria-label^="Upload"][aria-label$="sequence file"]')
-      .first()
-      .setInputFiles(path(name));
+    await uploadSequence(
+      page,
+      path(name),
+      name === 'trace.ab1' ? { [name]: 'Founder 3, reverse read' } : {},
+    );
     await expect(
       toast(page, `Sequence file uploaded (version ${String(index + 2)})`),
     ).toBeVisible();
@@ -63,8 +80,25 @@ test('AC1: upload .ab1, .fasta and .seq to an ID protocol; each lists and downlo
     expect(await downloaded(page, link)).toEqual(readFileSync(path(name)));
   }
   await expect(area).toContainText(/\d+ B/);
+  // The note says what the file is; it sits under the file name, which stays the name.
+  const traceRow = area.locator('li').filter({ hasText: 'trace.ab1' });
+  await expect(traceRow).toContainText('Founder 3, reverse read');
+  await expect(area.locator('li').filter({ hasText: 'read.seq' })).not.toContainText('Founder');
+  await area.getByRole('button', { name: 'Edit the note of read.seq' }).click();
+  await dialog(page).getByLabel('Note', { exact: true }).fill('Same founder, forward read');
+  await dialog(page).getByRole('button', { name: 'Save note' }).click();
+  await expect(toast(page, 'Note saved (version 5)')).toBeVisible();
+  await expect(area.locator('li').filter({ hasText: 'read.seq' })).toContainText(
+    'Same founder, forward read',
+  );
+  await area.getByRole('button', { name: 'Edit the note of read.seq' }).click();
+  await dialog(page).getByLabel('Note', { exact: true }).fill('');
+  await dialog(page).getByRole('button', { name: 'Save note' }).click();
+  await expect(toast(page, 'Note saved (version 6)')).toBeVisible();
+  await expect(area.locator('li').filter({ hasText: 'read.seq' })).not.toContainText('forward');
+  await expect(page.locator('#history')).toContainText('Uploaded sequence result for PCR.');
   await expect(page.locator('#history .history-item').first()).toContainText(
-    'Uploaded sequence result for PCR.',
+    'Updated the note of sequence result read.seq.',
   );
   // Sequence files are not images: no thumbnail for them.
   await expect(page.locator('#protocols .thumb-button')).toHaveCount(0);
@@ -116,9 +150,7 @@ test('AC3: a renamed text file, a renamed binary and a 16 MB file are refused wi
   await actAs(page, 'Bob');
   const id = await createLine(page, unique(testInfo, 'sx'));
   await page.goto(`/lines/${id}`);
-  const input = page
-    .locator('#protocols input[type="file"][aria-label^="Upload"][aria-label$="sequence file"]')
-    .first();
+  const input = page.locator(SEQUENCE_INPUT).first();
   const mismatch = 'The file content does not match its type';
   const cases = [
     { name: 'x.ab1', buffer: Buffer.from('>not a trace\nACGT\n'), message: mismatch },
@@ -131,7 +163,9 @@ test('AC3: a renamed text file, a renamed binary and a 16 MB file are refused wi
     },
   ];
   for (const { name, buffer, message } of cases) {
-    await input.setInputFiles({ name, mimeType: '', buffer });
+    // Size and type are refused at once; a wrong content only after the upload (the server reads it).
+    if (message === mismatch) await uploadSequence(page, { name, mimeType: '', buffer });
+    else await input.setInputFiles({ name, mimeType: '', buffer });
     await expect(toast(page, message)).toBeVisible();
     await page
       .getByRole('button', { name: 'Dismiss' })
@@ -153,11 +187,13 @@ test('several files at once: sequence files on a protocol, one reference per fil
   // Protocol: three sequence files in one choice; a PNG in the same choice is refused by name.
   const area = page.locator('#protocols .sequence-files:visible').first();
   await page
-    .locator('#protocols input[type="file"][aria-label^="Upload"][aria-label$="sequence file"]')
+    .locator(SEQUENCE_INPUT)
     .first()
     .setInputFiles([...FILES.map(path), 'tests/fixtures/gel.png']);
-  await expect(toast(page, '3 files uploaded (version 4)')).toBeVisible();
   await expect(toast(page, 'gel.png: Choose a sequence file')).toBeVisible();
+  await expect(dialog(page)).toContainText('Upload 3 sequence files');
+  await dialog(page).getByRole('button', { name: 'Upload', exact: true }).click();
+  await expect(toast(page, '3 files uploaded (version 4)')).toBeVisible();
   for (const name of FILES)
     await expect(area.getByRole('link', { name: `Download ${name}` })).toBeVisible();
 

@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { referenceKind, safeExternalUrl, type ReferenceKind } from '../lineDetailFormat';
 import type { LineDetailReference } from '../lineDetailApi';
 import { strings } from '../strings';
+import { IconLink } from './Icons';
 import { attachmentUrl } from './Images';
 import { EmptyState } from './shared';
 
@@ -48,14 +49,12 @@ function ReferenceItem({
       {href === null ? (
         <span className="reference-item__missing">{strings.referenceMissingLink}</span>
       ) : (
-        <a
+        <IconLink
+          icon={url === null ? 'download' : 'open'}
+          label={`${openLabel}: ${reference.title}`}
           href={href}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`${openLabel}: ${reference.title}`}
-        >
-          {openLabel}
-        </a>
+          newTab
+        />
       )}
       {actions}
     </li>

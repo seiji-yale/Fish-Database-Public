@@ -171,9 +171,16 @@ test('AC3: Admin restores an earlier version; it becomes a new version and nothi
   await page.request.patch(`/api/lines/${id}`, { data: { expectedVersion: 1, gene: 'g2' } });
   await page.request.patch(`/api/lines/${id}`, { data: { expectedVersion: 2, gene: 'g3' } });
 
-  // A Member does not see Restore.
+  // A Member sees the Restore icon, but only an Admin can finish it: the dialog says so when tried.
   await page.goto(`/lines/${id}`);
-  await expect(page.getByRole('button', { name: /Restore this version/ })).toHaveCount(0);
+  await page
+    .getByRole('button', { name: /Restore this version/ })
+    .last()
+    .click();
+  const memberDialog = page.getByRole('dialog', { name: 'Restore version 1?' });
+  await memberDialog.getByRole('button', { name: 'Restore' }).click();
+  await expect(memberDialog.getByRole('alert')).toContainText('Only an Admin can do this');
+  await memberDialog.getByRole('button', { name: 'Cancel' }).click();
 
   await actAs(page, 'Admin');
   await page.goto(`/lines/${id}`);
