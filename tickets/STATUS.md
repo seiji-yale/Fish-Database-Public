@@ -17,3 +17,5 @@ Migration numbers follow the repository: 0012 is taken (`0012_cryo_use_undo`), s
 | T-038  | Sequence file uploads (.ab1 / .fasta / .seq)             | Draft | —          |
 | T-039  | Undo Start Breeding (Breeding to Current)                | Draft | —          |
 | T-040  | Restore Version dialog: Restore button cannot be pressed | Draft | —          |
+
+See `tickets/HANDOFF.md` for the current state and next steps.
