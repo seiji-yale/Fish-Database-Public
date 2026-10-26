@@ -1069,9 +1069,20 @@ a.button--primary:hover {
   }
 }
 .protocol-fields {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: var(--space-2);
+}
+/* Every item of an ID protocol is one box of the same look; long ones take a whole row. */
+.protocol-fields > .detail-field {
+  align-content: start;
+  margin: 0;
+}
+.protocol-fields > .detail-field--block,
+.protocol-fields > .detail-field--wide,
+.protocol-fields > .sequence-field,
+.protocol-fields > .protocol-actions {
+  grid-column: 1 / -1;
 }
 .sequence-field {
   min-width: 0;
@@ -1092,7 +1103,8 @@ a.button--primary:hover {
   margin: 0;
   padding: var(--space-2);
   overflow-wrap: anywhere;
-  background: var(--color-surface-tint);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
 }
 .sequence-field__copy {
@@ -1866,7 +1878,14 @@ a.button--primary:hover {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: var(--space-1);
+}
+.protocol-actions__edit {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
 }
 .inline-check {
   display: flex;
@@ -2497,4 +2516,140 @@ a.button--primary:hover {
   .chat-composer__shortcut {
     display: none;
   }
+}
+.reference-item__file {
+  color: var(--color-muted, inherit);
+  font-size: 0.9em;
+}
+
+/* Icon buttons (T-038 follow-up): upload, remove, copy — a symbol with a name and a tooltip. */
+.icon {
+  flex: none;
+}
+.icon-button {
+  display: inline-flex;
+  width: 2.5rem;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.icon-button:hover:not(:disabled) {
+  background: var(--color-surface-tint);
+}
+.icon-button--primary {
+  color: #064d99;
+  border-color: #064d99;
+}
+.icon-button--danger {
+  color: #9b1c1c;
+}
+.field-head {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+.field-head__actions {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+/* The gallery: up to five pictures in one row, the rest fold into "Other images". */
+.thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+  max-width: 32rem;
+  margin-top: var(--space-2);
+}
+.thumb-grid .thumb-wrap {
+  width: 100%;
+}
+.thumb-grid .thumb-button {
+  width: 100%;
+}
+.thumb-grid .thumb-button img {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.thumb-grid .thumb-remove {
+  top: 2px;
+  right: 2px;
+  width: 26px;
+  height: 26px;
+}
+.thumb-grid .thumb-remove .icon {
+  width: 14px;
+  height: 14px;
+}
+.file-list {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.file-list li {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-width: 0;
+}
+.file-list a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.file-list__size {
+  margin-right: auto;
+  color: var(--color-muted);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+.file-list .icon-button {
+  width: 2rem;
+  min-height: 2rem;
+}
+.file-list__main {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  align-items: baseline;
+  min-width: 0;
+}
+.file-list__main .file-list__size {
+  margin-right: 0;
+}
+.file-list__note {
+  flex-basis: 100%;
+  color: var(--color-muted);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+/* Each file is its own row, set off from the next, so a note clearly belongs to the file above it. */
+.file-list {
+  gap: 0;
+}
+.file-list li {
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+}
+.file-list li:first-child {
+  border-top: 0;
+}
+.file-list__note {
+  padding-left: var(--space-2);
+  margin-top: var(--space-1);
+  border-left: 3px solid var(--color-border);
+}
+.file-list li {
+  align-items: flex-start;
 }

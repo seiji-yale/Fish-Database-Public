@@ -10,6 +10,8 @@ import { strings } from '../strings';
 import type { LineDetailAttachment, LineDetailProtocol } from '../lineDetailApi';
 import { safeExternalUrl } from '../lineDetailFormat';
 import { AttachmentImages } from './Images';
+import { IconButton } from './Icons';
+import { SequenceFiles } from './SequenceFiles';
 
 function str(fields: Record<string, unknown>, key: string): string | null {
   const value = fields[key];
@@ -55,20 +57,17 @@ function SequenceField({ label, value: stored }: { label: string; value: string 
   }
 
   return (
-    <div className="sequence-field">
+    <div className="detail-field sequence-field">
       <strong className="sequence-field__label">{label}</strong>
       <div className="sequence-field__content">
         <code className="sequence-field__value">{value}</code>
-        <button
-          type="button"
-          className="sequence-field__copy"
-          aria-label={strings.copyAria(label)}
+        <IconButton
+          icon="copy"
+          label={strings.copyAria(label)}
           onClick={() => {
             void copy();
           }}
-        >
-          {strings.copy}
-        </button>
+        />
       </div>
       {copied ? (
         <Toast
@@ -192,12 +191,23 @@ function ProtocolBody({
   actions,
   onRemoveImage,
   renderUpload,
+  renderSequenceUpload,
+  onEditNote,
 }: {
   protocol: LineDetailProtocol;
   actions: ReactNode;
+  onEditNote?: ((attachment: LineDetailAttachment) => void) | undefined;
   renderUpload?: ((hasImages: boolean) => ReactNode) | undefined;
+  renderSequenceUpload?: ((hasFiles: boolean) => ReactNode) | undefined;
   onRemoveImage?: ((attachment: LineDetailAttachment) => void) | undefined;
 }) {
+  // Sequence files (T-038) are a list of downloads of their own, not images.
+  const sequenceFiles = protocol.attachments.filter(
+    (attachment) => attachment.kind === 'sequence_result',
+  );
+  const otherAttachments = protocol.attachments.filter(
+    (attachment) => attachment.kind !== 'sequence_result',
+  );
   return (
     <div className="protocol-fields">
       {protocol.protocolType === 'pcr' ? <PcrFields fields={protocol.fields} /> : null}
@@ -211,12 +221,22 @@ function ProtocolBody({
         <FluorescenceFields fields={protocol.fields} />
       ) : null}
       {protocol.protocolType === 'custom' ? <CustomFields fields={protocol.fields} /> : null}
-      {protocol.notes !== null ? <Field label={strings.columnNotes}>{protocol.notes}</Field> : null}
+      {protocol.notes !== null ? (
+        <Field label={strings.columnNotes} wide>
+          {protocol.notes}
+        </Field>
+      ) : null}
       <AttachmentImages
-        attachments={protocol.attachments}
+        attachments={otherAttachments}
         showEmptyHint={protocol.protocolType !== 'none' && protocol.protocolType !== 'tails'}
         onRemove={onRemoveImage}
         uploader={renderUpload}
+      />
+      <SequenceFiles
+        attachments={sequenceFiles}
+        onRemove={onRemoveImage}
+        onEditNote={onEditNote}
+        uploader={renderSequenceUpload}
       />
       {actions}
     </div>
@@ -237,8 +257,15 @@ export function ProtocolsSection({
   renderActions,
   onRemoveImage,
   renderUpload,
+  renderSequenceUpload,
+  onEditSequenceNote,
 }: {
   protocols: readonly LineDetailProtocol[];
+  /** Given to people who may edit: opens the note of a sequence file. */
+  onEditSequenceNote?: ((attachment: LineDetailAttachment) => void) | undefined;
+  /** The upload control for sequence files (T-038), for editors. */
+  renderSequenceUpload?:
+    ((protocol: LineDetailProtocol, hasFiles: boolean) => ReactNode) | undefined;
   /** The upload control under a protocol's images (an "Upload another image" button), for editors. */
   renderUpload?: ((protocol: LineDetailProtocol, hasImages: boolean) => ReactNode) | undefined;
   /** Given to people who may edit: a "Remove image" button under each image. */
@@ -274,10 +301,16 @@ export function ProtocolsSection({
             protocol={selected}
             actions={renderActions?.(selected, protocols.indexOf(selected), protocols.length)}
             onRemoveImage={onRemoveImage}
+            onEditNote={onEditSequenceNote}
             renderUpload={
               renderUpload === undefined
                 ? undefined
                 : (hasImages) => renderUpload(selected, hasImages)
+            }
+            renderSequenceUpload={
+              renderSequenceUpload === undefined
+                ? undefined
+                : (hasFiles) => renderSequenceUpload(selected, hasFiles)
             }
           />
         )}
@@ -296,10 +329,16 @@ export function ProtocolsSection({
                 protocol={protocol}
                 actions={renderActions?.(protocol, index, protocols.length)}
                 onRemoveImage={onRemoveImage}
+                onEditNote={onEditSequenceNote}
                 renderUpload={
                   renderUpload === undefined
                     ? undefined
                     : (hasImages) => renderUpload(protocol, hasImages)
+                }
+                renderSequenceUpload={
+                  renderSequenceUpload === undefined
+                    ? undefined
+                    : (hasFiles) => renderSequenceUpload(protocol, hasFiles)
                 }
               />
             </details>

@@ -15,6 +15,8 @@ DOC = {
             "attachments": [
                 {"id": "A1", "r2_key": "lines/L1/A1-gel.png", "mime_type": "image/png", "deleted_at": None},
                 {"id": "A2", "r2_key": "lines/L1/A2-old.png", "mime_type": None, "deleted_at": "2026-01-01"},
+                {"id": "S1", "r2_key": "lines/L1/S1-trace.ab1", "mime_type": "application/x-abif", "deleted_at": None},
+                {"id": "S2", "r2_key": "lines/L1/S2-read.fasta", "mime_type": "text/x-fasta", "deleted_at": None},
             ]
         }
     ]
@@ -27,6 +29,8 @@ def make_copy(tmp_path: Path) -> tuple[Path, Path]:
     latest = tmp_path / "latest"
     (latest / "images" / "demo_c3").mkdir(parents=True)
     (latest / "images" / "demo_c3" / "A1-gel.png").write_bytes(b"png")
+    (latest / "images" / "demo_c3" / "S1-trace.ab1").write_bytes(b"ABIF")
+    (latest / "images" / "demo_c3" / "S2-read.fasta").write_bytes(b">s\nACGT\n")
     (latest / "images" / "demo_c3" / "notes.txt").write_bytes(b"not an attachment")
     return export, latest
 
@@ -34,9 +38,10 @@ def make_copy(tmp_path: Path) -> tuple[Path, Path]:
 def test_files_are_matched_by_attachment_id(tmp_path):
     export, latest = make_copy(tmp_path)
     files = restore_images.index_files(latest / "images")
-    assert list(files) == ["A1"]
+    assert list(files) == ["A1", "S1", "S2"]
     todo, missing = restore_images.plan(DOC, files)
-    assert [row["id"] for row, _ in todo] == ["A1"]
+    # Sequence files (T-038) are restored like any other attachment.
+    assert [row["id"] for row, _ in todo] == ["A1", "S1", "S2"]
     assert [row["id"] for row in missing] == ["A2"]
 
 
@@ -52,8 +57,9 @@ def test_dry_run_lists_without_uploading_and_reports_missing(tmp_path, monkeypat
     assert restore_images.main([str(export), str(latest), "--env", "preview", "--bucket", "demo-preview", "--dry-run"]) == 0
     out = capsys.readouterr().out
     assert "would upload lines/L1/A1-gel.png" in out
+    assert "would upload lines/L1/S1-trace.ab1" in out
     assert "lines/L1/A2-old.png  (removed)" in out
-    assert "Would upload 1 file(s) to demo-preview" in out
+    assert "Would upload 3 file(s) to demo-preview" in out
 
 
 def test_uploads_locally_and_needs_yes_elsewhere(tmp_path, monkeypatch, capsys):
@@ -63,7 +69,11 @@ def test_uploads_locally_and_needs_yes_elsewhere(tmp_path, monkeypatch, capsys):
     assert restore_images.main([str(export), str(latest), "--env", "production", "--bucket", "demo-prod"]) == 2
     assert "PRODUCTION" in capsys.readouterr().err
     assert restore_images.main([str(export), str(latest), "--env", "local", "--bucket", "demo-local"]) == 0
-    assert sent == [("local", "demo-local", "lines/L1/A1-gel.png")]
+    assert sent == [
+        ("local", "demo-local", "lines/L1/A1-gel.png"),
+        ("local", "demo-local", "lines/L1/S1-trace.ab1"),
+        ("local", "demo-local", "lines/L1/S2-read.fasta"),
+    ]
     assert restore_images.main([str(export), str(tmp_path), "--env", "local", "--bucket", "demo-local"]) == 1
     assert "no images/ folder" in capsys.readouterr().err
 

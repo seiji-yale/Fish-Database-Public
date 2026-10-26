@@ -447,6 +447,45 @@ describe('images', () => {
     ).toBe(false);
   });
 
+  it('copies sequence files (T-038) like any other attachment, under their own names', async () => {
+    const { db, lineId } = await withImages(0);
+    const bob = await getUserByName(db, 'Bob');
+    const objects = new Map<string, Uint8Array>();
+    for (const [id, name] of [
+      ['seq001', 'trace.ab1'],
+      ['seq002', 'read.fasta'],
+      ['seq003', 'read.seq'],
+    ] as const) {
+      const key = `lines/${lineId}/${id}-${name}`;
+      objects.set(key, new Uint8Array([1, 2, 3]));
+      await db
+        .prepare(
+          `INSERT INTO attachments (id, owner_type, owner_id, kind, file_name, r2_key, created_at, created_by)
+           VALUES (?, 'line', ?, 'sequence_result', ?, ?, '2026-10-01T00:00:00.000Z', ?)`,
+        )
+        .bind(id, lineId, name, key, bob?.id)
+        .run();
+    }
+    const target = new FakeTarget();
+    const bucket = fakeBucket(objects);
+    expect(
+      await runMirror({
+        db,
+        target,
+        kind: 'manual',
+        now: at('2026-10-05T15:00:00Z'),
+        sleep: noSleep,
+        clock,
+        files: bucket,
+      }),
+    ).toMatchObject({ status: 'ok' });
+    expect([...target.files.keys()].filter((path) => path.includes('/images/')).sort()).toEqual([
+      'latest/images/demo_c3/seq001-trace.ab1',
+      'latest/images/demo_c3/seq002-read.fasta',
+      'latest/images/demo_c3/seq003-read.seq',
+    ]);
+  });
+
   it('a "/" in a line name does not make a sub-folder; a missing R2 object is skipped', async () => {
     const { db, files } = await withImages(1, 'Tg(a/b)');
     await db

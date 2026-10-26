@@ -13,8 +13,12 @@ import type {
 } from '../lineDetailApi';
 import { reorderProtocols, setCurrentProtocol, type ProtocolWriteResult } from '../protocolsApi';
 import { strings } from '../strings';
-import { removeAttachment, uploadFile } from '../uploadApi';
+import { removeAttachment, updateAttachmentNote, uploadFile } from '../uploadApi';
 import { FilePicker } from './FilePicker';
+import { Icon } from './Icons';
+import { RowMenu } from './RowMenu';
+import { SequenceNoteDialog, SequenceUploadDialog } from './SequenceNoteDialogs';
+import { ConfirmDialog } from './shared';
 import { ProtocolDialog, RemoveProtocolDialog } from './ProtocolDialogs';
 import { ProtocolsSection } from './ProtocolCards';
 
@@ -35,8 +39,17 @@ export function ProtocolManager({
 }) {
   const [editing, setEditing] = useState<LineDetailProtocol | null>(null);
   const [removing, setRemoving] = useState<LineDetailProtocol | null>(null);
+  /** An image or sequence file waiting for the "Remove this file?" answer. */
+  const [removingFile, setRemovingFile] = useState<LineDetailAttachment | null>(null);
+  /** Sequence files chosen but not uploaded yet: the dialog asks for a note on each. */
+  const [pendingSequence, setPendingSequence] = useState<{
+    protocol: LineDetailProtocol;
+    files: File[];
+  } | null>(null);
+  const [notingFile, setNotingFile] = useState<LineDetailAttachment | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  const [progressFile, setProgressFile] = useState<{ number: number; of: number } | null>(null);
 
   /** Runs one immediate write and tells the page the outcome. */
   async function quick(run: () => Promise<ProtocolWriteResult>, label: string) {
@@ -55,33 +68,70 @@ export function ProtocolManager({
     }
   }
 
-  /** An image for one ID protocol (gel, fluorescence, ...): checked here, then uploaded. */
-  function uploadImage(protocol: LineDetailProtocol, file: File) {
-    const check = checkUpload({ name: file.name, type: file.type, size: file.size }, true);
-    if (!check.ok) {
-      onChanged(check.message);
-      return;
-    }
+  /**
+   * Files for one ID protocol, one after the other (each upload is a line version, so the next one
+   * starts from the version the last one returned). Images take the protocol's image kind; sequence
+   * files (.ab1, .fasta, .seq) are sequence results. A file that fails is named in the message and
+   * the rest still go up.
+   */
+  async function uploadMany(
+    protocol: LineDetailProtocol,
+    files: File[],
+    scope: 'images' | 'sequence',
+    notes: readonly string[] = [],
+  ) {
     const kind =
-      protocol.protocolType === 'fluorescence'
-        ? 'fluorescence_image'
-        : protocol.protocolType === 'pcr' || protocol.protocolType === 'pcr_sequence'
-          ? 'gel_image'
-          : 'other';
-    setProgress(0);
-    void quick(async () => {
+      scope === 'sequence'
+        ? 'sequence_result'
+        : protocol.protocolType === 'fluorescence'
+          ? 'fluorescence_image'
+          : protocol.protocolType === 'pcr' || protocol.protocolType === 'pcr_sequence'
+            ? 'gel_image'
+            : 'other';
+    setBusy(true);
+    let version = line.version;
+    let uploaded = 0;
+    const failed: string[] = [];
+    for (const [index, file] of files.entries()) {
+      const check = checkUpload({ name: file.name, type: file.type, size: file.size }, scope);
+      if (!check.ok) {
+        failed.push(`${file.name}: ${check.message}`);
+        continue;
+      }
+      setProgress(0);
+      setProgressFile(files.length > 1 ? { number: index + 1, of: files.length } : null);
       try {
-        return (await uploadFile(line.id, {
+        const result = await uploadFile(line.id, {
           file,
           kind,
           protocolId: protocol.id,
-          expectedVersion: line.version,
+          expectedVersion: version,
+          ...((notes[index] ?? '') === '' ? {} : { caption: notes[index] ?? '' }),
           onProgress: setProgress,
-        })) as ProtocolWriteResult;
-      } finally {
-        setProgress(null);
+        });
+        version = result.version ?? version;
+        uploaded += 1;
+      } catch (cause: unknown) {
+        const reason =
+          cause instanceof HttpError && cause.body !== null
+            ? cause.body.message
+            : strings.uploadFailed;
+        failed.push(`${file.name}: ${reason}`);
+        // A newer version of the line makes every later upload fail the same way: stop and reload.
+        if (cause instanceof HttpError && cause.body?.code === 'VERSION_CONFLICT') break;
       }
-    }, strings.uploadDone);
+    }
+    setProgress(null);
+    setProgressFile(null);
+    setBusy(false);
+    const label = scope === 'sequence' ? strings.sequenceFileUploaded : strings.uploadDone;
+    const done =
+      uploaded === 0
+        ? ''
+        : uploaded === 1
+          ? strings.activityDone(label, version)
+          : strings.activityDone(strings.uploadManyDone(uploaded), version);
+    onChanged([done, ...failed].filter((part) => part !== '').join(' '));
   }
 
   function removeImage(attachment: LineDetailAttachment) {
@@ -90,7 +140,9 @@ export function ProtocolManager({
         removeAttachment(line.id, attachment.id, {
           expectedVersion: line.version,
         }) as Promise<ProtocolWriteResult>,
-      strings.uploadRemoveDone,
+      attachment.kind === 'sequence_result'
+        ? strings.sequenceFileRemoved
+        : strings.uploadRemoveDone,
     );
   }
 
@@ -129,23 +181,55 @@ export function ProtocolManager({
       ) : null}
       {progress === null ? null : (
         <p className="upload-status" role="status">
-          {strings.uploadProgress(progress)}
+          {progressFile === null
+            ? strings.uploadProgress(progress)
+            : strings.uploadProgressOf(progress, progressFile.number, progressFile.of)}
         </p>
       )}
       <ProtocolsSection
         protocols={line.protocols}
-        onRemoveImage={canEdit ? removeImage : undefined}
+        onRemoveImage={canEdit ? setRemovingFile : undefined}
+        onEditSequenceNote={canEdit ? setNotingFile : undefined}
         renderUpload={
           canEdit
-            ? (protocol, hasImages) => (
+            ? (protocol) => (
                 <FilePicker
-                  label={hasImages ? strings.uploadAnotherImage : strings.uploadImage}
+                  label={strings.uploadImage}
+                  iconOnly
                   imagesOnly
+                  multiple
                   camera
-                  primary
                   disabled={busy}
-                  onPick={(file) => {
-                    uploadImage(protocol, file);
+                  onPick={() => undefined}
+                  onPickMany={(files) => {
+                    void uploadMany(protocol, files, 'images');
+                  }}
+                  onError={onChanged}
+                />
+              )
+            : undefined
+        }
+        renderSequenceUpload={
+          canEdit
+            ? (protocol) => (
+                <FilePicker
+                  label={strings.uploadSequenceFile}
+                  iconOnly
+                  sequenceOnly
+                  multiple
+                  disabled={busy}
+                  onPick={() => undefined}
+                  onPickMany={(files) => {
+                    // Refused files are named at once; the rest wait for their notes.
+                    const usable = files.filter((file) => {
+                      const check = checkUpload(
+                        { name: file.name, type: file.type, size: file.size },
+                        'sequence',
+                      );
+                      if (!check.ok) onChanged(`${file.name}: ${check.message}`);
+                      return check.ok;
+                    });
+                    if (usable.length > 0) setPendingSequence({ protocol, files: usable });
                   }}
                   onError={onChanged}
                 />
@@ -162,59 +246,122 @@ export function ProtocolManager({
                 >
                   <button
                     type="button"
+                    className="protocol-actions__edit"
                     onClick={() => {
                       setEditing(protocol);
                     }}
                   >
+                    <Icon name="pencil" />
                     {strings.protocolActionEdit}
                   </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => {
-                      void quick(
-                        () =>
-                          setCurrentProtocol(line.id, protocol.id, {
-                            expectedVersion: line.version,
-                            current: !protocol.isCurrent,
-                          }),
-                        strings.protocolDoneCurrent,
-                      );
-                    }}
-                  >
-                    {protocol.isCurrent ? strings.protocolUnsetCurrent : strings.protocolSetCurrent}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy || index === 0}
-                    onClick={() => {
-                      move(protocol, -1);
-                    }}
-                  >
-                    {strings.protocolMoveUp}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy || index === count - 1}
-                    onClick={() => {
-                      move(protocol, 1);
-                    }}
-                  >
-                    {strings.protocolMoveDown}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRemoving(protocol);
-                    }}
-                  >
-                    {strings.protocolRemoveAction}
-                  </button>
+                  <RowMenu
+                    label={strings.protocolMoreActions(protocol.label)}
+                    items={[
+                      {
+                        label: protocol.isCurrent
+                          ? strings.protocolUnsetCurrent
+                          : strings.protocolSetCurrent,
+                        onSelect: () => {
+                          void quick(
+                            () =>
+                              setCurrentProtocol(line.id, protocol.id, {
+                                expectedVersion: line.version,
+                                current: !protocol.isCurrent,
+                              }),
+                            strings.protocolDoneCurrent,
+                          );
+                        },
+                      },
+                      ...(index === 0
+                        ? []
+                        : [
+                            {
+                              label: strings.protocolMoveUp,
+                              onSelect: () => {
+                                move(protocol, -1);
+                              },
+                            },
+                          ]),
+                      ...(index === count - 1
+                        ? []
+                        : [
+                            {
+                              label: strings.protocolMoveDown,
+                              onSelect: () => {
+                                move(protocol, 1);
+                              },
+                            },
+                          ]),
+                      {
+                        label: strings.protocolRemoveAction,
+                        danger: true,
+                        onSelect: () => {
+                          setRemoving(protocol);
+                        },
+                      },
+                    ]}
+                  />
                 </div>
               )
             : undefined
         }
       />
+      {pendingSequence === null ? null : (
+        <SequenceUploadDialog
+          files={pendingSequence.files}
+          onCancel={() => {
+            setPendingSequence(null);
+          }}
+          onUpload={(notes) => {
+            const { protocol, files } = pendingSequence;
+            setPendingSequence(null);
+            void uploadMany(protocol, files, 'sequence', notes);
+          }}
+        />
+      )}
+      {notingFile === null ? null : (
+        <SequenceNoteDialog
+          attachment={notingFile}
+          busy={busy}
+          onCancel={() => {
+            setNotingFile(null);
+          }}
+          onSave={(note) => {
+            const file = notingFile;
+            setNotingFile(null);
+            void quick(
+              () =>
+                updateAttachmentNote(line.id, file.id, {
+                  expectedVersion: line.version,
+                  caption: note,
+                }) as Promise<ProtocolWriteResult>,
+              strings.sequenceNoteSaved,
+            );
+          }}
+        />
+      )}
+      {removingFile === null ? null : (
+        <ConfirmDialog
+          title={strings.attachmentRemoveTitle}
+          confirmLabel={strings.attachmentRemoveConfirm}
+          onCancel={() => {
+            setRemovingFile(null);
+          }}
+          onConfirm={() => {
+            const file = removingFile;
+            setRemovingFile(null);
+            removeImage(file);
+          }}
+        >
+          <p>
+            {strings.attachmentRemoveBody(
+              removingFile.kind === 'sequence_result'
+                ? (removingFile.fileName ?? strings.imageFallbackName)
+                : (removingFile.caption ?? removingFile.fileName ?? strings.imageFallbackName),
+            )}
+          </p>
+        </ConfirmDialog>
+      )}
       {adding ? (
         <ProtocolDialog
           {...shared}

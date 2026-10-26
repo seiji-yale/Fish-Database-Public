@@ -325,17 +325,13 @@ export function LineDetailPage({ id }: { id: string }) {
             <HistoryPanel
               versions={line.versions}
               protocols={line.protocols}
-              {...(acting.can('admin.*')
-                ? {
-                    restore: {
-                      lineId: line.id,
-                      onRestored: (result: EditResult, versionNo: number) => {
-                        setFlash(strings.restoreDone(versionNo, result.version));
-                        setReloadKey((key) => key + 1);
-                      },
-                    },
-                  }
-                : {})}
+              restore={{
+                lineId: line.id,
+                onRestored: (result: EditResult, versionNo: number) => {
+                  setFlash(strings.restoreDone(versionNo, result.version));
+                  setReloadKey((key) => key + 1);
+                },
+              }}
             />
           </section>
         </aside>

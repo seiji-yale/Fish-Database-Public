@@ -89,3 +89,29 @@ export async function removeAttachment(
   }
   return (await response.json()) as { version: number; summary: string };
 }
+
+/** `PATCH /api/lines/:id/attachments/:aid`: sets or clears the note of a sequence file. */
+export async function updateAttachmentNote(
+  lineId: string,
+  attachmentId: string,
+  payload: { expectedVersion: number; caption: string },
+): Promise<{ version: number; summary: string }> {
+  const response = await fetch(
+    `/api/lines/${encodeURIComponent(lineId)}/attachments/${encodeURIComponent(attachmentId)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  );
+  if (!response.ok) {
+    let error: ApiErrorBody | null = null;
+    try {
+      error = ((await response.json()) as { error?: ApiErrorBody }).error ?? null;
+    } catch {
+      /* ignore */
+    }
+    throw new HttpError(response.status, error);
+  }
+  return (await response.json()) as { version: number; summary: string };
+}

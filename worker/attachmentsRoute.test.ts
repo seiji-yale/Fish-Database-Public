@@ -40,6 +40,24 @@ describe('GET /api/attachments/:id/file (T-009 Step 3)', () => {
     expect(await response.text()).toBe('PNGDATA');
   });
 
+  it('serves a sequence file as a download only', async () => {
+    const { db, get } = await setup({ 'lines/line-1/att-1-trace.ab1': 'ABIF' });
+    await insertAttachment(
+      db,
+      makeAttachment({
+        kind: 'sequence_result',
+        file_name: 'trace.ab1',
+        mime_type: 'application/x-abif',
+        r2_key: 'lines/line-1/att-1-trace.ab1',
+      }),
+    );
+    const response = await get('/api/attachments/att-1/file');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-disposition')).toBe('attachment');
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(await response.text()).toBe('ABIF');
+  });
+
   it('never serves SVG inline (it can carry script)', async () => {
     const { db, get } = await setup({ 'lines/line-1/att-1-gel.png': '<svg onload="alert(1)"/>' });
     await insertAttachment(db, makeAttachment({ mime_type: 'image/svg+xml' }));

@@ -30,6 +30,7 @@ export interface LineDetailAttachment {
   fileName: string | null;
   mimeType: string | null;
   caption: string | null;
+  sizeBytes: number | null;
   isLatest: boolean;
   createdAt: string;
 }
@@ -193,6 +194,7 @@ function toAttachment(row: AttachmentRow): LineDetailAttachment {
     fileName: row.file_name,
     mimeType: row.mime_type,
     caption: row.caption,
+    sizeBytes: row.size_bytes,
     isLatest: row.is_latest === 1,
     createdAt: row.created_at,
   };

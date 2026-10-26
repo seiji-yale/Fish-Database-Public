@@ -4,9 +4,18 @@ import { strings } from '../strings';
 export type Status = 'Current' | 'Breeding' | 'Closed';
 /** A label/value row, used anywhere a page shows a flat list of fields (Line Detail's Summary and
  * Protocol cards). */
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({
+  label,
+  children,
+  wide = false,
+}: {
+  label: string;
+  children: ReactNode;
+  /** Spans the whole row of a grid of fields (long text). */
+  wide?: boolean;
+}) {
   return (
-    <p className="detail-field">
+    <p className={wide ? 'detail-field detail-field--wide' : 'detail-field'}>
       <strong>{label}</strong>
       <span>{children}</span>
     </p>

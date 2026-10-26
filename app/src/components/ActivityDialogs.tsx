@@ -434,7 +434,7 @@ export function GenotypingDialog({ line, onClose, onDone }: DialogProps) {
             onPick={(file) => {
               const check = checkUpload(
                 { name: file.name, type: file.type, size: file.size },
-                true,
+                'images',
               );
               if (check.ok) {
                 state.setErrors({});

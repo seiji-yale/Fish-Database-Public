@@ -4,6 +4,7 @@ import type { LineOverviewDocument } from '../lineDetailApi';
 import { safeExternalUrl } from '../lineDetailFormat';
 import { linesReturnUrl } from '../linesReturn';
 import { strings } from '../strings';
+import { IconLink } from './Icons';
 import { attachmentUrl } from './Images';
 import { Field, StatusBadge } from './shared';
 
@@ -61,22 +62,25 @@ export function LineOverviewCard({ line, hint }: { line: LineOverviewDocument; h
               const href =
                 url ??
                 (reference.attachmentId === null ? null : attachmentUrl(reference.attachmentId));
+              const openLabel = url === null ? strings.downloadFile : strings.openFile;
               return (
                 <li className="reference-item" key={reference.id}>
                   <span className="reference-item__body">
                     <strong>{reference.title}</strong>
+                    {reference.fileName === null ||
+                    reference.fileName === reference.title ? null : (
+                      <span className="reference-item__file">{reference.fileName}</span>
+                    )}
                   </span>
                   {href === null ? (
                     <span className="reference-item__missing">{strings.referenceMissingLink}</span>
                   ) : (
-                    <a
+                    <IconLink
+                      icon={url === null ? 'download' : 'open'}
+                      label={`${openLabel}: ${reference.title}`}
                       href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`${strings.openFile}: ${reference.title}`}
-                    >
-                      {strings.openFile}
-                    </a>
+                      newTab
+                    />
                   )}
                 </li>
               );

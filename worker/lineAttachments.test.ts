@@ -433,3 +433,232 @@ describe('references: add, edit, remove with a link or a file', () => {
     );
   });
 });
+
+describe('sequence files (T-038)', () => {
+  const ascii = (text: string) => Uint8Array.from(text, (char) => char.charCodeAt(0));
+  const ABI = Uint8Array.from([0x41, 0x42, 0x49, 0x46, 0, 1, 2, 3, 0xff, 0x80]);
+  const FASTA = ascii('>seq1\nACGTACGT\n');
+  const SEQ = ascii('ACGTACGTACGT\n');
+
+  const samples = [
+    ['trace.ab1', ABI, 'application/x-abif'],
+    ['trace.abi', ABI, 'application/x-abif'],
+    ['read.fasta', FASTA, 'text/x-fasta'],
+    ['read.fa', FASTA, 'text/x-fasta'],
+    ['read.seq', SEQ, 'text/x-sequence'],
+  ] as const;
+
+  it.each(samples)(
+    'stores %s on an ID protocol as a sequence result and writes one readable version',
+    async (name, bytes, mimeType) => {
+      const { db, files, upload, base, protocolId, form, attachments } = await setup();
+      const response = await upload(
+        `${base}/attachments`,
+        form({
+          file: file(bytes, name, ''),
+          kind: 'sequence_result',
+          protocolId,
+          expectedVersion: '1',
+        }),
+      );
+      expect(response.status).toBe(200);
+      expect((await response.json<WriteBody>()).summary).toMatch(/^Uploaded sequence result for /);
+      const [row] = await attachments(protocolId);
+      expect(row).toMatchObject({ owner_type: 'id_protocol', kind: 'sequence_result' });
+      expect(files.get(row?.r2_key ?? '')).toEqual(bytes);
+      const stored = await db
+        .prepare('SELECT mime_type FROM attachments WHERE id = ?')
+        .bind(row?.id ?? '')
+        .first<{ mime_type: string }>();
+      expect(stored?.mime_type).toBe(mimeType);
+    },
+  );
+
+  it('keeps the slots apart: images are refused as sequence results and the reverse', async () => {
+    const { upload, base, protocolId, form, fieldsOf, attachments } = await setup();
+    const send = (f: File, kind: string) =>
+      upload(`${base}/attachments`, form({ file: f, kind, protocolId, expectedVersion: '1' }));
+    const image = await send(file(PNG, 'g.png', 'image/png'), 'sequence_result');
+    expect(image.status).toBe(400);
+    expect((await fieldsOf(image))['file']).toMatch(/sequence file/);
+    const trace = await send(file(ABI, 'trace.ab1', ''), 'gel_image');
+    expect(trace.status).toBe(400);
+    expect((await fieldsOf(trace))['file']).toMatch(/image/);
+    expect(await attachments()).toHaveLength(0);
+  });
+
+  it('refuses a renamed binary, a text file renamed .ab1, a binary renamed .fasta, a NUL byte and 16 MB', async () => {
+    const { files, upload, base, protocolId, form, fieldsOf, attachments } = await setup();
+    const send = (f: File) =>
+      upload(
+        `${base}/attachments`,
+        form({ file: f, kind: 'sequence_result', protocolId, expectedVersion: '1' }),
+      );
+    const refused = [
+      file(EXE, 'x.ab1', ''),
+      file(ascii('>seq1\nACGT\n'), 'x.ab1', ''),
+      file(EXE, 'x.fasta', ''),
+      file(PNG, 'x.seq', ''),
+      file(ascii('>seq\u0000ACGT'), 'x.fasta', ''),
+      file(ascii('ACGT'), 'x.fasta', ''),
+      file(ascii(''), 'x.seq', ''),
+      file(new Uint8Array(16 * 1024 * 1024), 'big.ab1', ''),
+    ];
+    for (const candidate of refused) {
+      const response = await send(candidate);
+      expect(response.status, candidate.name).toBe(400);
+      expect(Object.keys(await fieldsOf(response))).toContain('file');
+    }
+    expect(await attachments()).toHaveLength(0);
+    expect(files.size).toBe(0);
+  });
+
+  it.each(samples)('lets %s be attached to a reference as a file', async (name, bytes) => {
+    const { call, upload, base, form } = await setup();
+    const staged = await upload(
+      `${base}/attachments`,
+      form({ file: file(bytes, name, ''), kind: 'reference_file' }),
+    );
+    expect(staged.status).toBe(201);
+    const { attachmentId } = await staged.json<{ attachmentId: string }>();
+    const add = await call(`${base}/references`, {
+      expectedVersion: 1,
+      title: 'Sequencing',
+      attachmentId,
+    });
+    expect(add.status).toBe(200);
+  });
+
+  it('soft-deletes a sequence file: the row and the stored file stay, and History records it', async () => {
+    const { db, files, call, upload, base, line, protocolId, form, attachments } = await setup();
+    await upload(
+      `${base}/attachments`,
+      form({
+        file: file(ABI, 'trace.ab1', ''),
+        kind: 'sequence_result',
+        protocolId,
+        expectedVersion: '1',
+      }),
+    );
+    const [row] = await attachments(protocolId);
+    const response = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 2 },
+      'DELETE',
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json<WriteBody>()).summary).toMatch(
+      /^Removed sequence result trace.ab1/,
+    );
+    expect(await attachments(protocolId)).toHaveLength(0);
+    expect(files.has(row?.r2_key ?? '')).toBe(true);
+    expect((await listLineVersionsByLine(db, line.id))[0]?.change_type).toBe('protocol_changed');
+  });
+
+  it('keeps a note given at upload, edits it, clears it, and refuses a long note or a gel image', async () => {
+    const { call, upload, base, protocolId, form, fieldsOf, attachments } = await setup();
+    const sent = await upload(
+      `${base}/attachments`,
+      form({
+        file: file(ABI, 'trace.ab1', ''),
+        kind: 'sequence_result',
+        protocolId,
+        expectedVersion: '1',
+        caption: 'Founder 3, reverse read',
+      }),
+    );
+    expect(sent.status).toBe(200);
+    const noteOf = async () => {
+      const detail = await (
+        await call(base)
+      ).json<{ protocols: { attachments: { id: string; caption: string | null }[] }[] }>();
+      return detail.protocols.flatMap((protocol) => protocol.attachments)[0];
+    };
+    const row = await noteOf();
+    expect(row?.caption).toBe('Founder 3, reverse read');
+
+    const edit = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 2, caption: '  Founder 3, forward read ' },
+      'PATCH',
+    );
+    expect(edit.status).toBe(200);
+    expect((await edit.json<WriteBody>()).summary).toMatch(
+      /^Updated the note of sequence result trace.ab1/,
+    );
+    expect((await noteOf())?.caption).toBe('Founder 3, forward read');
+
+    const cleared = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 3, caption: '' },
+      'PATCH',
+    );
+    expect(cleared.status).toBe(200);
+    expect((await noteOf())?.caption).toBeNull();
+
+    const long = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 4, caption: 'x'.repeat(501) },
+      'PATCH',
+    );
+    expect(long.status).toBe(400);
+    expect((await fieldsOf(long))['caption']).toMatch(/at most 500/);
+    const stale = await call(
+      `${base}/attachments/${row?.id ?? ''}`,
+      { expectedVersion: 1, caption: 'late' },
+      'PATCH',
+    );
+    expect(stale.status).toBe(409);
+
+    await upload(
+      `${base}/attachments`,
+      form({
+        file: file(PNG, 'g.png', 'image/png'),
+        kind: 'gel_image',
+        protocolId,
+        expectedVersion: '4',
+      }),
+    );
+    const gel = (await attachments(protocolId)).find((entry) => entry.kind === 'gel_image');
+    const refused = await call(
+      `${base}/attachments/${gel?.id ?? ''}`,
+      { expectedVersion: 5, caption: 'renamed' },
+      'PATCH',
+    );
+    expect(refused.status).toBe(400);
+    expect(
+      (await call(`${base}/attachments/nope`, { expectedVersion: 5, caption: 'x' }, 'PATCH'))
+        .status,
+    ).toBe(404);
+
+    const tooLongAtUpload = await upload(
+      `${base}/attachments`,
+      form({
+        file: file(ABI, 'again.ab1', ''),
+        kind: 'sequence_result',
+        protocolId,
+        expectedVersion: '5',
+        caption: 'y'.repeat(501),
+      }),
+    );
+    expect(tooLongAtUpload.status).toBe(400);
+  });
+
+  it('lists the size of a sequence file in the line detail', async () => {
+    const { call, upload, base, protocolId, form } = await setup();
+    await upload(
+      `${base}/attachments`,
+      form({
+        file: file(FASTA, 'read.fasta', ''),
+        kind: 'sequence_result',
+        protocolId,
+        expectedVersion: '1',
+      }),
+    );
+    const detail = await (
+      await call(base)
+    ).json<{ protocols: { attachments: { kind: string; sizeBytes: number | null }[] }[] }>();
+    const listed = detail.protocols.flatMap((protocol) => protocol.attachments);
+    expect(listed.find((entry) => entry.kind === 'sequence_result')?.sizeBytes).toBe(FASTA.length);
+  });
+});

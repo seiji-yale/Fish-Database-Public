@@ -10,6 +10,7 @@
  */
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { MAX_NOTE_LENGTH, uploadMessages, type UploadScope } from '../../domain/attachments';
 import { validateReference } from '../../domain/referenceEdit';
 import { nowIso, newId } from '../db/ids';
 import { insertAttachmentStatement } from '../db/queries/attachments';
@@ -71,6 +72,11 @@ function text(form: FormData, name: string): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
+/** What each kind of upload takes: a reference file anything, a sequence result sequence files, the rest images. */
+function scopeOf(kind: AttachmentKind): UploadScope {
+  return kind === 'reference_file' ? 'any' : kind === 'sequence_result' ? 'sequence' : 'images';
+}
+
 lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
   const author = await requireAuthor(c, 'data');
   let form: FormData;
@@ -89,6 +95,8 @@ lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
   const kind = kindText as AttachmentKind;
   const protocolId = text(form, 'protocolId');
   const caption = text(form, 'caption');
+  if (caption !== null && caption.length > MAX_NOTE_LENGTH)
+    throw invalid({ caption: uploadMessages.noteTooLong });
   const db = c.env.DB;
   const lineId = document.line.id;
   const now = nowIso();
@@ -100,7 +108,7 @@ lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
       lineId,
       file,
       thumb instanceof File ? thumb : null,
-      kind !== 'reference_file',
+      scopeOf(kind),
     );
     const row = attachmentRow(
       stored,
@@ -121,7 +129,7 @@ lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
     lineId,
     file,
     thumb instanceof File ? thumb : null,
-    true,
+    scopeOf(kind),
   );
   const row = attachmentRow(
     stored,
@@ -147,6 +155,39 @@ lineAttachmentRoutes.post('/lines/:id/attachments', async (c) => {
   );
 });
 
+/** The note of a sequence file (what the file is). An empty note clears it. */
+lineAttachmentRoutes.patch('/lines/:id/attachments/:aid', async (c) => {
+  const body = await readJson(c.req.raw);
+  const author = await requireAuthor(c, 'data');
+  const expectedVersion = versionField.safeParse(body['expectedVersion']);
+  if (!expectedVersion.success) throw invalid({ expectedVersion: messages.invalidInput });
+  const rawNote = body['caption'];
+  if (rawNote !== null && rawNote !== undefined && typeof rawNote !== 'string')
+    throw invalid({ caption: messages.invalidInput });
+  const caption = typeof rawNote === 'string' && rawNote.trim() !== '' ? rawNote.trim() : null;
+  if (caption !== null && caption.length > MAX_NOTE_LENGTH)
+    throw invalid({ caption: uploadMessages.noteTooLong });
+  const db = c.env.DB;
+  const document = await documentOf(c);
+  const { row } = await findLineAttachment(db, document, c.req.param('aid'));
+  // Notes are for sequence files; a gel image's caption is its display name.
+  if (row.kind !== 'sequence_result') throw invalid({ attachment: messages.invalidInput });
+  const now = nowIso();
+  return write(c, {
+    expectedVersion: expectedVersion.data,
+    author,
+    changeType: 'protocol_changed',
+    now,
+    mutate: () => ({
+      line: {},
+      statements: [
+        db.prepare('UPDATE attachments SET caption = ? WHERE id = ?').bind(caption, row.id),
+      ],
+      summaryContext: { text: `Updated the note of sequence result ${row.file_name ?? ''}.` },
+    }),
+  });
+});
+
 lineAttachmentRoutes.delete('/lines/:id/attachments/:aid', async (c) => {
   const body = await readJson(c.req.raw);
   const author = await requireAuthor(c, 'data');
@@ -156,7 +197,11 @@ lineAttachmentRoutes.delete('/lines/:id/attachments/:aid', async (c) => {
   const document = await documentOf(c);
   const { row, protocolId } = await findLineAttachment(db, document, c.req.param('aid'));
   const now = nowIso();
-  const name = row.caption ?? row.file_name ?? KIND_WORDS[row.kind];
+  // A sequence file's caption is its note, so History names it by file name.
+  const name =
+    row.kind === 'sequence_result'
+      ? (row.file_name ?? KIND_WORDS[row.kind])
+      : (row.caption ?? row.file_name ?? KIND_WORDS[row.kind]);
   return write(c, {
     expectedVersion: expectedVersion.data,
     author,

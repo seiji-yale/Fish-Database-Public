@@ -4,13 +4,23 @@
  * the person gets the message before waiting for an upload).
  */
 
+/** A note on a sequence file says what the file is (which sample, which primer, ...). */
+export const MAX_NOTE_LENGTH = 500;
+
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 /** Thumbnails are made in the browser (≤ 400 px JPEG); anything larger is not a thumbnail. */
 export const MAX_THUMB_BYTES = 1024 * 1024;
 
-export type UploadKind = 'image' | 'pdf' | 'docx';
+export type UploadKind = 'image' | 'pdf' | 'docx' | 'sequence-trace' | 'sequence-text';
 
-/** Accepted types: JPG, PNG, WebP, HEIC/HEIF, PDF, DOCX (no TIFF, no SVG). */
+/** Which files a slot takes: protocol images, protocol sequence files, or anything accepted (references). */
+export type UploadScope = 'any' | 'images' | 'sequence';
+
+/**
+ * Accepted types: JPG, PNG, WebP, HEIC/HEIF, PDF, DOCX (no TIFF, no SVG) and sequence files (T-038):
+ * ABI traces (`.ab1`, `.abi`), FASTA (`.fasta`, `.fa`, `.fas`) and plain `.seq`. Browsers report no
+ * useful MIME type for the sequence files, so these keys are our own names for them.
+ */
 export const ACCEPTED_TYPES: Readonly<Record<string, { kind: UploadKind; extensions: string[] }>> =
   {
     'image/jpeg': { kind: 'image', extensions: ['jpg', 'jpeg'] },
@@ -23,16 +33,29 @@ export const ACCEPTED_TYPES: Readonly<Record<string, { kind: UploadKind; extensi
       kind: 'docx',
       extensions: ['docx'],
     },
+    'application/x-abif': { kind: 'sequence-trace', extensions: ['ab1', 'abi'] },
+    'text/x-fasta': { kind: 'sequence-text', extensions: ['fasta', 'fa', 'fas'] },
+    'text/x-sequence': { kind: 'sequence-text', extensions: ['seq'] },
   };
 
-/** For `<input accept>`: the types plus their extensions (some phones report no MIME type). */
-export const ACCEPT_ATTRIBUTE = Object.entries(ACCEPTED_TYPES)
-  .flatMap(([type, { extensions }]) => [type, ...extensions.map((extension) => `.${extension}`)])
-  .join(',');
+const isSequenceKind = (kind: UploadKind) => kind === 'sequence-trace' || kind === 'sequence-text';
 
-export const IMAGE_ACCEPT_ATTRIBUTE = Object.entries(ACCEPTED_TYPES)
-  .filter(([, entry]) => entry.kind === 'image')
-  .flatMap(([type, { extensions }]) => [type, ...extensions.map((extension) => `.${extension}`)])
+function acceptAttribute(include: (kind: UploadKind) => boolean): string {
+  return Object.entries(ACCEPTED_TYPES)
+    .filter(([, entry]) => include(entry.kind))
+    .flatMap(([type, { extensions }]) => [type, ...extensions.map((extension) => `.${extension}`)])
+    .join(',');
+}
+
+/** For `<input accept>`: the types plus their extensions (some phones report no MIME type). */
+export const ACCEPT_ATTRIBUTE = acceptAttribute(() => true);
+
+export const IMAGE_ACCEPT_ATTRIBUTE = acceptAttribute((kind) => kind === 'image');
+
+/** Sequence files only: the extensions, because the MIME types above are not real browser types. */
+export const SEQUENCE_ACCEPT_ATTRIBUTE = Object.values(ACCEPTED_TYPES)
+  .filter((entry) => isSequenceKind(entry.kind))
+  .flatMap(({ extensions }) => extensions.map((extension) => `.${extension}`))
   .join(',');
 
 export const uploadMessages = {
@@ -40,8 +63,10 @@ export const uploadMessages = {
     'This file is larger than 15 MB. Make it smaller (for example export the gel as JPG) and try again.',
   empty: 'This file is empty. Choose another file.',
   wrongType:
-    'This file type is not accepted. Use JPG, PNG, WebP, HEIC or PDF (and DOCX for references). TIFF is not accepted: export the gel as PNG or JPG.',
+    'This file type is not accepted. Use JPG, PNG, WebP, HEIC or PDF, sequence files (.ab1, .abi, .fasta, .fa, .fas, .seq) and DOCX for references. TIFF is not accepted: export the gel as PNG or JPG.',
   notImage: 'Choose an image (JPG, PNG, WebP or HEIC).',
+  noteTooLong: `A note can have at most ${String(MAX_NOTE_LENGTH)} characters.`,
+  notSequence: 'Choose a sequence file (.ab1, .abi, .fasta, .fa, .fas or .seq).',
   contentMismatch: 'The file content does not match its type. Export it again and retry.',
   heicUnsupported:
     'This browser cannot open HEIC photos, so they would show as broken images. Export the photo as JPG or PNG first, or upload it from an iPhone or Safari (which convert it automatically).',
@@ -63,29 +88,82 @@ export function acceptedType(fileName: string, reportedType: string): string | n
   const match = Object.entries(ACCEPTED_TYPES).find(([, entry]) =>
     entry.extensions.includes(extension),
   );
-  return reported === '' || reported === 'application/octet-stream' ? (match?.[0] ?? null) : null;
+  if (match === undefined) return null;
+  if (reported === '' || reported === 'application/octet-stream') return match[0];
+  // Operating systems report all kinds of types for sequence files (`text/plain`, `chemical/x-fasta`,
+  // ...), so the extension decides; the content check in `contentMatchesType` is what guards them.
+  const kind = (ACCEPTED_TYPES[match[0]] as { kind: UploadKind }).kind;
+  return isSequenceKind(kind) ? match[0] : null;
 }
 
 export type UploadCheck =
   { ok: true; mimeType: string; kind: UploadKind } | { ok: false; message: string };
 
-/** Size and type; `imagesOnly` for protocol and gel images. */
+/** Size and type; `scope` narrows what the slot takes (protocol images, protocol sequence files). */
 export function checkUpload(
   file: { name: string; type: string; size: number },
-  imagesOnly = false,
+  scope: UploadScope = 'any',
 ): UploadCheck {
   if (file.size === 0) return { ok: false, message: uploadMessages.empty };
   if (file.size > MAX_UPLOAD_BYTES) return { ok: false, message: uploadMessages.tooLarge };
   const mimeType = acceptedType(file.name, file.type);
   if (mimeType === null) return { ok: false, message: uploadMessages.wrongType };
   const kind = (ACCEPTED_TYPES[mimeType] as { kind: UploadKind }).kind;
-  if (imagesOnly && kind !== 'image') return { ok: false, message: uploadMessages.notImage };
+  if (scope === 'images' && kind !== 'image')
+    return { ok: false, message: uploadMessages.notImage };
+  if (scope === 'sequence' && !isSequenceKind(kind))
+    return { ok: false, message: uploadMessages.notSequence };
   return { ok: true, mimeType, kind };
+}
+
+/** How many leading bytes `contentMatchesType` needs: the text types look at the first 4 KB. */
+export const CONTENT_CHECK_BYTES = 4096;
+
+const UTF8_BOM = [0xef, 0xbb, 0xbf];
+
+/** Valid UTF-8; a character cut off at the very end of the sample is allowed. */
+function isUtf8(bytes: Uint8Array): boolean {
+  let index = 0;
+  while (index < bytes.length) {
+    const lead = bytes[index] as number;
+    const extra =
+      lead < 0x80
+        ? 0
+        : lead >= 0xc2 && lead <= 0xdf
+          ? 1
+          : lead >= 0xe0 && lead <= 0xef
+            ? 2
+            : lead >= 0xf0 && lead <= 0xf4
+              ? 3
+              : -1;
+    if (extra < 0) return false;
+    for (let offset = 1; offset <= extra; offset += 1) {
+      const next = bytes[index + offset];
+      if (next === undefined) return true;
+      if ((next & 0xc0) !== 0x80) return false;
+    }
+    index += extra + 1;
+  }
+  return true;
+}
+
+/** Plain text: no NUL byte and valid UTF-8. */
+function isPlainText(bytes: Uint8Array): boolean {
+  return !bytes.includes(0) && isUtf8(bytes);
+}
+
+/** FASTA: text whose first non-blank character is `>` (a UTF-8 byte order mark is skipped). */
+function isFasta(bytes: Uint8Array): boolean {
+  if (!isPlainText(bytes)) return false;
+  const start = UTF8_BOM.every((value, index) => bytes[index] === value) ? 3 : 0;
+  const first = bytes.subarray(start).find((byte) => ![0x20, 0x09, 0x0a, 0x0d].includes(byte));
+  return first === 0x3e;
 }
 
 /**
  * The first bytes of each accepted type (the API checks them, so a renamed `.exe` is refused).
- * HEIC/HEIF are ISO-BMFF files: bytes 4..7 are `ftyp`. DOCX is a ZIP file.
+ * HEIC/HEIF are ISO-BMFF files: bytes 4..7 are `ftyp`. DOCX is a ZIP file. ABI traces start with
+ * `ABIF`; FASTA and `.seq` are plain text (callers pass up to `CONTENT_CHECK_BYTES`).
  */
 export function contentMatchesType(bytes: Uint8Array, mimeType: string): boolean {
   const starts = (...values: number[]) => values.every((value, index) => bytes[index] === value);
@@ -105,6 +183,12 @@ export function contentMatchesType(bytes: Uint8Array, mimeType: string): boolean
       return ascii(0, '%PDF-');
     case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
       return starts(0x50, 0x4b, 0x03, 0x04);
+    case 'application/x-abif':
+      return ascii(0, 'ABIF');
+    case 'text/x-fasta':
+      return isFasta(bytes);
+    case 'text/x-sequence':
+      return bytes.length > 0 && isPlainText(bytes);
     default:
       return false;
   }

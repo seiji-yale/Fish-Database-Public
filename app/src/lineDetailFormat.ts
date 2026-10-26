@@ -111,3 +111,10 @@ export function formatDiffValue(
   if (typeof value === 'object') return JSON.stringify(value);
   return scalarText(value);
 }
+
+/** A file size for a list: `812 B`, `34 kB`, `1.2 MB`. */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${String(bytes)} B`;
+  if (bytes < 1024 * 1024) return `${String(Math.round(bytes / 1024))} kB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}

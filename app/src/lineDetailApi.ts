@@ -8,6 +8,7 @@ export interface LineDetailAttachment {
   fileName: string | null;
   mimeType: string | null;
   caption: string | null;
+  sizeBytes: number | null;
   isLatest: boolean;
   createdAt: string;
 }
@@ -147,6 +148,7 @@ export interface LineOverviewDocument {
     url: string | null;
     hasAttachment: boolean;
     attachmentId: string | null;
+    fileName: string | null;
   }[];
 }
 

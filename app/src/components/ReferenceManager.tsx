@@ -33,35 +33,64 @@ function ReferenceDialog({
   const [title, setTitle] = useState(reference?.title ?? '');
   const [url, setUrl] = useState(reference?.url ?? '');
   const [note, setNote] = useState(reference?.note ?? '');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [progress, setProgress] = useState<number | null>(null);
-  const staged = useRef<{ file: File; attachmentId: string } | null>(null);
+  const staged = useRef<Map<File, string>>(new Map());
+  /** Files already turned into references (a retry after a failure skips them) and the version after them. */
+  const created = useRef<{ files: Set<File>; version: number | null }>({
+    files: new Set(),
+    version: null,
+  });
   const hasFile = reference?.attachment != null;
+  // Several files at once make one reference each, titled with the file name (add only).
+  const many = !editing && files.length > 1;
+  const file = files.length === 1 ? (files[0] ?? null) : null;
+
+  async function stage(picked: File): Promise<string> {
+    const known = staged.current.get(picked);
+    if (known !== undefined) return known;
+    setProgress(0);
+    try {
+      const uploaded = await uploadFile(line.id, {
+        file: picked,
+        kind: 'reference_file',
+        onProgress: setProgress,
+      });
+      staged.current.set(picked, uploaded.attachmentId);
+      return uploaded.attachmentId;
+    } finally {
+      setProgress(null);
+    }
+  }
 
   const state = useActivitySend(
     async (payload) => {
-      let attachmentId =
-        staged.current !== null && staged.current.file === file
-          ? staged.current.attachmentId
-          : undefined;
-      if (file !== null && attachmentId === undefined) {
-        setProgress(0);
-        try {
-          const uploaded = await uploadFile(line.id, {
-            file,
-            kind: 'reference_file',
-            onProgress: setProgress,
+      if (many) {
+        let version = created.current.version ?? line.version;
+        for (const picked of files) {
+          if (created.current.files.has(picked)) continue;
+          const attachmentId = await stage(picked);
+          const result = await addReference(line.id, {
+            expectedVersion: version,
+            title: picked.name,
+            url: '',
+            note,
+            attachmentId,
           });
-          staged.current = { file, attachmentId: uploaded.attachmentId };
-          attachmentId = uploaded.attachmentId;
-        } finally {
-          setProgress(null);
+          version = result.version;
+          created.current = { files: created.current.files.add(picked), version };
         }
+        return { version };
       }
+      const attachmentId = file === null ? undefined : await stage(file);
       const body = attachmentId === undefined ? payload : { ...payload, attachmentId };
       return editing ? editReference(line.id, reference.id, body) : addReference(line.id, body);
     },
-    editing ? strings.referenceDoneUpdated : strings.referenceDoneAdded,
+    editing
+      ? strings.referenceDoneUpdated
+      : many
+        ? strings.referenceDoneAddedMany(files.length)
+        : strings.referenceDoneAdded,
     onDone,
   );
 
@@ -75,6 +104,15 @@ function ReferenceDialog({
   });
 
   function submit() {
+    if (many) {
+      if (url.trim() !== '') {
+        state.show({ url: strings.referenceManyNoLink }, 'rf-');
+        return;
+      }
+      state.setErrors({});
+      void state.send({}, 'rf-');
+      return;
+    }
     const check = validateReference(payload(), hasFile);
     if (!check.ok) {
       state.show(check.errors, 'rf-');
@@ -96,14 +134,18 @@ function ReferenceDialog({
       }}
       initialFocus="#rf-title"
     >
-      <TextField
-        id="rf-title"
-        label={strings.referenceTitleField}
-        required
-        value={title}
-        error={state.errors['title']}
-        onChange={setTitle}
-      />
+      {many ? (
+        <p className="form-field__hint">{strings.referenceManyFiles(files.length)}</p>
+      ) : (
+        <TextField
+          id="rf-title"
+          label={strings.referenceTitleField}
+          required
+          value={title}
+          error={state.errors['title']}
+          onChange={setTitle}
+        />
+      )}
       <TextField
         id="rf-url"
         label={strings.referenceUrlField}
@@ -120,29 +162,48 @@ function ReferenceDialog({
             : strings.referenceFileHint}
         </p>
         <FilePicker
-          onPick={(picked) => {
-            const check = checkUpload({ name: picked.name, type: picked.type, size: picked.size });
-            if (check.ok) {
-              state.setErrors({});
-              setFile(picked);
-            } else state.setErrors({ file: check.message });
+          multiple={!editing}
+          onPick={() => undefined}
+          onPickMany={(picked) => {
+            const problems: string[] = [];
+            const usable = picked.filter((candidate) => {
+              const check = checkUpload({
+                name: candidate.name,
+                type: candidate.type,
+                size: candidate.size,
+              });
+              if (!check.ok) problems.push(`${candidate.name}: ${check.message}`);
+              return check.ok;
+            });
+            state.setErrors(problems.length === 0 ? {} : { file: problems.join(' ') });
+            if (usable.length === 0) return;
+            setFiles(usable);
+            // One file: its name (with the extension) is the title unless a title is typed already.
+            const only = usable.length === 1 ? usable[0] : undefined;
+            if (only !== undefined && title.trim() === '') setTitle(only.name);
           }}
           onError={(message) => {
             state.setErrors({ file: message });
           }}
         />
-        {file === null ? null : (
-          <p className="gel-chosen">
-            <span>{strings.gelImageChosen(file.name)}</span>
+        {files.length === 0 ? null : (
+          <div className="gel-chosen">
+            <ul className="attribute-list">
+              {files.map((chosen) => (
+                <li key={`${chosen.name}-${String(chosen.size)}-${String(chosen.lastModified)}`}>
+                  {strings.gelImageChosen(chosen.name)}
+                </li>
+              ))}
+            </ul>
             <button
               type="button"
               onClick={() => {
-                setFile(null);
+                setFiles([]);
               }}
             >
               {strings.gelImageRemove}
             </button>
-          </p>
+          </div>
         )}
         {state.errors['file'] === undefined ? null : (
           <p className="form-field__error" role="alert">

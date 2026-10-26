@@ -56,11 +56,12 @@ test('AC1: a gel image attached to a genotyping record shows on the protocol car
     ).toBeVisible();
   }
 
-  // Protocol card: the newest is the latest, the first one is under "Other images".
+  // Protocol card: both pictures are in the gallery (the rest would fold under "Other images").
   await expect.poll(() => loadedThumbs(page, '#protocols')).toBeGreaterThan(0);
   await expect(
-    page.locator('#protocols summary').filter({ hasText: 'Other images (1)' }).first(),
-  ).toBeAttached();
+    page.locator('#protocols .image-gallery:visible .thumb-button').first(),
+  ).toBeVisible();
+  await expect(page.locator('#protocols .image-gallery:visible .thumb-button')).toHaveCount(2);
   // Timeline: each record carries its gel image.
   await expect.poll(() => loadedThumbs(page, '#activity')).toBeGreaterThan(0);
 });
@@ -94,11 +95,11 @@ test('upload an image from the protocol card, open it in the lightbox with zoom,
   expect(corner).not.toBeNull();
   expect(corner?.right).toBeLessThan(12);
   expect(corner?.top).toBeLessThan(12);
-  // Under the latest image the button now says "Upload another image" (and is easy to spot).
+  // The upload control is an icon button in the Images heading.
   await expect(
     page
-      .locator('#protocols .image-upload')
-      .getByRole('button', { name: 'Upload another image' })
+      .locator('#protocols .image-gallery .field-head')
+      .getByRole('button', { name: 'Upload image' })
       .first(),
   ).toBeAttached();
 
@@ -116,6 +117,16 @@ test('upload an image from the protocol card, open it in the lightbox with zoom,
     .getByRole('button', { name: /^Remove image/ })
     .first()
     .click();
+  // Removing asks first; Cancel keeps the picture.
+  await expect(dialog(page)).toContainText('Remove this file?');
+  await dialog(page).getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.locator('#protocols .thumb-button:visible').first()).toBeVisible();
+  await page
+    .locator('#protocols')
+    .getByRole('button', { name: /^Remove image/ })
+    .first()
+    .click();
+  await dialog(page).getByRole('button', { name: 'Remove' }).click();
   await expect(toast(page, 'Image removed (version 3)')).toBeVisible();
   await expect(page.locator('#protocols')).toContainText('No image yet.');
 });
@@ -169,11 +180,11 @@ test('AC2: a PDF is attached as a reference and opens; links can be added, edite
   await dialog(page).getByRole('button', { name: 'Add reference' }).click();
   await expect(toast(page, 'Reference added (version 2)')).toBeVisible();
   const item = page.locator('#refs .reference-item').filter({ hasText: 'PCR protocol' });
-  await expect(item.getByRole('link', { name: /Open/ })).toHaveAttribute(
+  await expect(item.getByRole('link', { name: /Download/ })).toHaveAttribute(
     'href',
     /\/api\/attachments\/.+\/file/,
   );
-  await expect(item.getByRole('link', { name: /Open/ })).toHaveAttribute('target', '_blank');
+  await expect(item.getByRole('link', { name: /Download/ })).toHaveAttribute('target', '_blank');
 
   // Needs a link or a file.
   await page.locator('#refs').getByRole('button', { name: '+ Add reference' }).click();

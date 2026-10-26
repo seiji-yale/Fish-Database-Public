@@ -17,6 +17,7 @@ import {
   type RestorePreview,
 } from '../lineEditApi';
 import { strings } from '../strings';
+import { IconButton } from './Icons';
 import { EmptyState, ConfirmDialog } from './shared';
 
 export function DiffTable({
@@ -57,7 +58,7 @@ function VersionItem({
 }: {
   version: LineDetailVersion;
   protocols: readonly LineDetailProtocol[];
-  /** Present only when the viewer may restore this version (Admin, not the newest version). */
+  /** Present for every version but the newest; only an Admin can finish it (the API says so when it is tried). */
   onRestore?: ((versionNo: number) => void) | undefined;
 }) {
   const [open, setOpen] = useState(false);
@@ -69,24 +70,22 @@ function VersionItem({
       </p>
       {version.note === null ? null : <p>{version.note}</p>}
       <div className="history-item__actions">
-        <button
-          type="button"
-          aria-expanded={open}
+        <IconButton
+          icon="changes"
+          expanded={open}
+          label={open ? strings.hideChanges : strings.showChanges}
           onClick={() => {
             setOpen((current) => !current);
           }}
-        >
-          {open ? strings.hideChanges : strings.showChanges}
-        </button>
+        />
         {onRestore === undefined ? null : (
-          <button
-            type="button"
+          <IconButton
+            icon="restore"
+            label={strings.restoreVersion}
             onClick={() => {
               onRestore(version.versionNo);
             }}
-          >
-            {strings.restoreVersion}
-          </button>
+          />
         )}
       </div>
       {open ? <DiffTable diff={version.diff} protocols={protocols} /> : null}

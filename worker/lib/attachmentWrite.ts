@@ -14,10 +14,12 @@
 import {
   attachmentKey,
   checkUpload,
+  CONTENT_CHECK_BYTES,
   contentMatchesType,
   MAX_THUMB_BYTES,
   thumbnailKey,
   uploadMessages,
+  type UploadScope,
 } from '../../domain/attachments';
 import type { Db, DbStatement } from '../db/db';
 import { newId } from '../db/ids';
@@ -67,15 +69,15 @@ export async function storeUpload(
   lineId: string,
   file: File,
   thumb: File | null,
-  imagesOnly: boolean,
+  scope: UploadScope,
 ): Promise<StoredFile> {
   if (bucket === undefined)
     throw new ApiError(503, 'STORAGE_UNAVAILABLE', messages.storageUnavailable);
-  const check = checkUpload({ name: file.name, type: file.type, size: file.size }, imagesOnly);
+  const check = checkUpload({ name: file.name, type: file.type, size: file.size }, scope);
   if (!check.ok) throw uploadError(check.message);
   // Only the first bytes are read here; the file itself goes to R2 as it is (no extra copy: the free
   // plan allows very little CPU time per request).
-  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const head = new Uint8Array(await file.slice(0, CONTENT_CHECK_BYTES).arrayBuffer());
   if (!contentMatchesType(head, check.mimeType)) throw uploadError(uploadMessages.contentMismatch);
 
   let thumbBytes: Uint8Array | null = null;
