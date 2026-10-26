@@ -4,7 +4,7 @@ Read `AGENTS.md`, then this file, then `tickets/STATUS.md`. Replace this file wh
 
 ## State
 
-PRs #3 to #7, #9, #10 and #11 are merged and deployed. `main` is at c97f9e8 plus the docs PR that carries this file; production and the preview run `main` at c97f9e8 (T-032 and T-038 shipped, no migration). Migration 0013 is the latest. T-031, T-032, T-038, T-039 and T-040 are Done. No ticket branch is open; T-033 has not been started (Draft in STATUS.md).
+Work stopped on 2026-10-26 after the T-038 release. PRs #3 to #7 and #9 to #12 are merged. Production and the preview run `main` at c97f9e8 (T-032 and T-038 shipped, no migration); the only later commit on `main` is this docs PR (#12). Migration 0013 is the latest. T-031, T-032, T-038, T-039 and T-040 are Done. No PR or ticket branch is open, and nothing is in progress: T-033 has not been started (Draft in STATUS.md). The owner has not yet asked for the Feeding Schedule lane to begin.
 
 ## Release policy (agreed with the owner, 2026-10-26)
 
