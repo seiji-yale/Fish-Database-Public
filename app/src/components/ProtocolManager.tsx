@@ -37,6 +37,7 @@ export function ProtocolManager({
   const [removing, setRemoving] = useState<LineDetailProtocol | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  const [progressFile, setProgressFile] = useState<{ number: number; of: number } | null>(null);
 
   /** Runs one immediate write and tells the page the outcome. */
   async function quick(run: () => Promise<ProtocolWriteResult>, label: string) {
@@ -55,56 +56,68 @@ export function ProtocolManager({
     }
   }
 
-  /** An image for one ID protocol (gel, fluorescence, ...): checked here, then uploaded. */
-  function uploadImage(protocol: LineDetailProtocol, file: File) {
-    const check = checkUpload({ name: file.name, type: file.type, size: file.size }, 'images');
-    if (!check.ok) {
-      onChanged(check.message);
-      return;
-    }
+  /**
+   * Files for one ID protocol, one after the other (each upload is a line version, so the next one
+   * starts from the version the last one returned). Images take the protocol's image kind; sequence
+   * files (.ab1, .fasta, .seq) are sequence results. A file that fails is named in the message and
+   * the rest still go up.
+   */
+  async function uploadMany(
+    protocol: LineDetailProtocol,
+    files: File[],
+    scope: 'images' | 'sequence',
+  ) {
     const kind =
-      protocol.protocolType === 'fluorescence'
-        ? 'fluorescence_image'
-        : protocol.protocolType === 'pcr' || protocol.protocolType === 'pcr_sequence'
-          ? 'gel_image'
-          : 'other';
-    setProgress(0);
-    void quick(async () => {
+      scope === 'sequence'
+        ? 'sequence_result'
+        : protocol.protocolType === 'fluorescence'
+          ? 'fluorescence_image'
+          : protocol.protocolType === 'pcr' || protocol.protocolType === 'pcr_sequence'
+            ? 'gel_image'
+            : 'other';
+    setBusy(true);
+    let version = line.version;
+    let uploaded = 0;
+    const failed: string[] = [];
+    for (const [index, file] of files.entries()) {
+      const check = checkUpload({ name: file.name, type: file.type, size: file.size }, scope);
+      if (!check.ok) {
+        failed.push(`${file.name}: ${check.message}`);
+        continue;
+      }
+      setProgress(0);
+      setProgressFile(files.length > 1 ? { number: index + 1, of: files.length } : null);
       try {
-        return (await uploadFile(line.id, {
+        const result = await uploadFile(line.id, {
           file,
           kind,
           protocolId: protocol.id,
-          expectedVersion: line.version,
+          expectedVersion: version,
           onProgress: setProgress,
-        })) as ProtocolWriteResult;
-      } finally {
-        setProgress(null);
+        });
+        version = result.version ?? version;
+        uploaded += 1;
+      } catch (cause: unknown) {
+        const reason =
+          cause instanceof HttpError && cause.body !== null
+            ? cause.body.message
+            : strings.uploadFailed;
+        failed.push(`${file.name}: ${reason}`);
+        // A newer version of the line makes every later upload fail the same way: stop and reload.
+        if (cause instanceof HttpError && cause.body?.code === 'VERSION_CONFLICT') break;
       }
-    }, strings.uploadDone);
-  }
-
-  /** A sequence file (.ab1, .fasta, .seq) for one ID protocol: checked here, then uploaded. */
-  function uploadSequence(protocol: LineDetailProtocol, file: File) {
-    const check = checkUpload({ name: file.name, type: file.type, size: file.size }, 'sequence');
-    if (!check.ok) {
-      onChanged(check.message);
-      return;
     }
-    setProgress(0);
-    void quick(async () => {
-      try {
-        return (await uploadFile(line.id, {
-          file,
-          kind: 'sequence_result',
-          protocolId: protocol.id,
-          expectedVersion: line.version,
-          onProgress: setProgress,
-        })) as ProtocolWriteResult;
-      } finally {
-        setProgress(null);
-      }
-    }, strings.sequenceFileUploaded);
+    setProgress(null);
+    setProgressFile(null);
+    setBusy(false);
+    const label = scope === 'sequence' ? strings.sequenceFileUploaded : strings.uploadDone;
+    const done =
+      uploaded === 0
+        ? ''
+        : uploaded === 1
+          ? strings.activityDone(label, version)
+          : strings.activityDone(strings.uploadManyDone(uploaded), version);
+    onChanged([done, ...failed].filter((part) => part !== '').join(' '));
   }
 
   function removeImage(attachment: LineDetailAttachment) {
@@ -152,7 +165,9 @@ export function ProtocolManager({
       ) : null}
       {progress === null ? null : (
         <p className="upload-status" role="status">
-          {strings.uploadProgress(progress)}
+          {progressFile === null
+            ? strings.uploadProgress(progress)
+            : strings.uploadProgressOf(progress, progressFile.number, progressFile.of)}
         </p>
       )}
       <ProtocolsSection
@@ -164,11 +179,13 @@ export function ProtocolManager({
                 <FilePicker
                   label={hasImages ? strings.uploadAnotherImage : strings.uploadImage}
                   imagesOnly
+                  multiple
                   camera
                   primary
                   disabled={busy}
-                  onPick={(file) => {
-                    uploadImage(protocol, file);
+                  onPick={() => undefined}
+                  onPickMany={(files) => {
+                    void uploadMany(protocol, files, 'images');
                   }}
                   onError={onChanged}
                 />
@@ -181,9 +198,11 @@ export function ProtocolManager({
                 <FilePicker
                   label={hasFiles ? strings.uploadAnotherSequenceFile : strings.uploadSequenceFile}
                   sequenceOnly
+                  multiple
                   disabled={busy}
-                  onPick={(file) => {
-                    uploadSequence(protocol, file);
+                  onPick={() => undefined}
+                  onPickMany={(files) => {
+                    void uploadMany(protocol, files, 'sequence');
                   }}
                   onError={onChanged}
                 />

@@ -27,6 +27,9 @@ function ReferenceItem({
   const url = safeExternalUrl(reference.url);
   const href =
     url ?? (reference.attachment === null ? null : attachmentUrl(reference.attachment.id));
+  // A web link is opened; an uploaded file is downloaded.
+  const openLabel = url === null ? strings.downloadFile : strings.openFile;
+  const fileName = reference.attachment?.fileName ?? null;
   const kind = referenceKind(url, reference.attachment?.mimeType ?? null);
   return (
     <li className="reference-item">
@@ -35,6 +38,9 @@ function ReferenceItem({
       </span>
       <span className="reference-item__body">
         <strong>{reference.title}</strong>
+        {fileName === null || fileName === reference.title ? null : (
+          <span className="reference-item__file">{fileName}</span>
+        )}
         {reference.note === null ? null : (
           <span>{`${strings.referenceNote}: ${reference.note}`}</span>
         )}
@@ -46,9 +52,9 @@ function ReferenceItem({
           href={href}
           target="_blank"
           rel="noreferrer"
-          aria-label={`${strings.openFile}: ${reference.title}`}
+          aria-label={`${openLabel}: ${reference.title}`}
         >
-          {strings.openFile}
+          {openLabel}
         </a>
       )}
       {actions}

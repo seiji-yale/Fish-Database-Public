@@ -61,10 +61,15 @@ export function LineOverviewCard({ line, hint }: { line: LineOverviewDocument; h
               const href =
                 url ??
                 (reference.attachmentId === null ? null : attachmentUrl(reference.attachmentId));
+              const openLabel = url === null ? strings.downloadFile : strings.openFile;
               return (
                 <li className="reference-item" key={reference.id}>
                   <span className="reference-item__body">
                     <strong>{reference.title}</strong>
+                    {reference.fileName === null ||
+                    reference.fileName === reference.title ? null : (
+                      <span className="reference-item__file">{reference.fileName}</span>
+                    )}
                   </span>
                   {href === null ? (
                     <span className="reference-item__missing">{strings.referenceMissingLink}</span>
@@ -73,9 +78,9 @@ export function LineOverviewCard({ line, hint }: { line: LineOverviewDocument; h
                       href={href}
                       target="_blank"
                       rel="noreferrer"
-                      aria-label={`${strings.openFile}: ${reference.title}`}
+                      aria-label={`${openLabel}: ${reference.title}`}
                     >
-                      {strings.openFile}
+                      {openLabel}
                     </a>
                   )}
                 </li>

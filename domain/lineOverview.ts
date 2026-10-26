@@ -17,6 +17,7 @@ export interface OverviewReference {
 /** A reference on the Line Detail overview: carries the file id so `Open` works for Guests. */
 export interface OverviewDetailReference extends OverviewReference {
   attachmentId: string | null;
+  fileName: string | null;
 }
 
 export interface LineListOverviewSource {
@@ -93,7 +94,7 @@ export interface LineOverviewSource {
     id: string;
     title: string;
     url: string | null;
-    attachment: { id: string } | null;
+    attachment: { id: string; fileName: string | null } | null;
   }[];
 }
 
@@ -137,6 +138,7 @@ export function toLineOverview(line: LineOverviewSource): LineOverview {
       url: reference.url,
       hasAttachment: reference.attachment !== null,
       attachmentId: reference.attachment?.id ?? null,
+      fileName: reference.attachment?.fileName ?? null,
     })),
   };
 }

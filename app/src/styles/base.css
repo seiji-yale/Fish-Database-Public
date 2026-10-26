@@ -2498,3 +2498,7 @@ a.button--primary:hover {
     display: none;
   }
 }
+.reference-item__file {
+  color: var(--color-muted, inherit);
+  font-size: 0.9em;
+}

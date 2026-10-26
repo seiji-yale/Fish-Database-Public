@@ -536,6 +536,14 @@ export const strings = {
   uploadAnotherImage: 'Upload another image',
   uploadProgress: (percent: number) => `Uploading… ${String(percent)}%`,
   uploadDone: 'Image uploaded',
+  uploadManyDone: (count: number) => `${String(count)} files uploaded`,
+  uploadProgressOf: (percent: number, number: number, of: number) =>
+    `Uploading file ${String(number)} of ${String(of)}… ${String(percent)}%`,
+  downloadFile: 'Download',
+  referenceManyFiles: (count: number) =>
+    `Each of the ${String(count)} files becomes its own reference, titled with its file name.`,
+  referenceManyNoLink: 'Leave the link empty when you add several files.',
+  referenceDoneAddedMany: (count: number) => `${String(count)} references added`,
   uploadFailed: 'The file could not be uploaded. Check your connection and try again.',
   uploadRemoveImage: 'Remove image',
   uploadRemoveDone: 'Image removed',

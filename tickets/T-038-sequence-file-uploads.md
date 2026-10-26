@@ -80,3 +80,10 @@ Mirror path check, restore test with a sequence file, docs folded.
 - Step 3: `SequenceFiles` list on the protocol card (name, size, download, remove for editors) with its own upload button; the image list no longer shows sequence results. The reference form accepts the new types. `e2e/sequenceFiles.write.spec.ts` at 375, 768 and 1280 px covers the three acceptance cases.
 - Step 4: the mirror and the export copy attachments by `r2_key`, so no code change; added a mirror test and a `restore_images.py` test with `.ab1` and `.fasta`. Docs: `01-requirements.md`, `03-data-model.md`, `04-ui-spec.md`. No `user-guide.md` exists in this repository.
 - Note: a hand-made 16 MB file is refused by the size check before any upload starts.
+
+### Owner feedback round 1 — 2026-10-26 — implementer
+
+- Several files at once: the file pickers on a protocol (images and sequence files) and in the Add reference dialog take several files. Protocol uploads go one after the other, each from the version the last one returned; a file that fails or is refused is named in the message and the rest still go up. In the Add reference dialog, several files make one reference each, titled with the file name (the link must stay empty); Edit still takes one file.
+- File name on a reference: the list (and the Guest/Feeder overview card) shows the uploaded file name with its extension under the title; choosing one file fills an empty title with the file name.
+- Link label: a web link says `Open`, an uploaded file says `Download` (list and overview card).
+- Tests: e2e for several files, title fill, the file name under the title and `Open` for a link; existing e2e updated for the `Download` label; overview keys now include `fileName`.

@@ -148,6 +148,7 @@ export interface LineOverviewDocument {
     url: string | null;
     hasAttachment: boolean;
     attachmentId: string | null;
+    fileName: string | null;
   }[];
 }
 

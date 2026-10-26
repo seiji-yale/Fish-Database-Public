@@ -169,11 +169,11 @@ test('AC2: a PDF is attached as a reference and opens; links can be added, edite
   await dialog(page).getByRole('button', { name: 'Add reference' }).click();
   await expect(toast(page, 'Reference added (version 2)')).toBeVisible();
   const item = page.locator('#refs .reference-item').filter({ hasText: 'PCR protocol' });
-  await expect(item.getByRole('link', { name: /Open/ })).toHaveAttribute(
+  await expect(item.getByRole('link', { name: /Download/ })).toHaveAttribute(
     'href',
     /\/api\/attachments\/.+\/file/,
   );
-  await expect(item.getByRole('link', { name: /Open/ })).toHaveAttribute('target', '_blank');
+  await expect(item.getByRole('link', { name: /Download/ })).toHaveAttribute('target', '_blank');
 
   // Needs a link or a file.
   await page.locator('#refs').getByRole('button', { name: '+ Add reference' }).click();

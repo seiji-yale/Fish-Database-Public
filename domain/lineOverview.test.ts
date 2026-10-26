@@ -81,7 +81,7 @@ const detailSource = {
   ],
   references: [
     { id: 'r1', title: 'Paper', url: 'https://example.org', attachment: null },
-    { id: 'r2', title: 'File', url: null, attachment: { id: 'a1' } },
+    { id: 'r2', title: 'File', url: null, attachment: { id: 'a1', fileName: 'trace.ab1' } },
   ],
   // Fields a restricted role must never get:
   notes: 'private',
@@ -128,8 +128,16 @@ describe('toLineOverview', () => {
         url: 'https://example.org',
         hasAttachment: false,
         attachmentId: null,
+        fileName: null,
       },
-      { id: 'r2', title: 'File', url: null, hasAttachment: true, attachmentId: 'a1' },
+      {
+        id: 'r2',
+        title: 'File',
+        url: null,
+        hasAttachment: true,
+        attachmentId: 'a1',
+        fileName: 'trace.ab1',
+      },
     ]);
   });
 });

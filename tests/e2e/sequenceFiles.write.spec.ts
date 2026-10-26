@@ -96,7 +96,7 @@ test('AC2: the same three types upload to a reference and download from the Line
   for (const name of FILES) {
     const item = page.locator('#refs .reference-item').filter({ hasText: `Seq ${name}` });
     const response = await page.request.get(
-      (await item.getByRole('link', { name: /Open/ }).getAttribute('href')) ?? '',
+      (await item.getByRole('link', { name: /Download/ }).getAttribute('href')) ?? '',
     );
     expect(response.headers()['content-disposition']).toBe('attachment');
     expect(Buffer.from(await response.body())).toEqual(readFileSync(path(name)));
@@ -135,4 +135,58 @@ test('AC3: a renamed text file, a renamed binary and a 16 MB file are refused wi
   }
   await page.reload();
   await expect(page.locator('#protocols .sequence-files a')).toHaveCount(0);
+});
+
+test('several files at once: sequence files on a protocol, one reference per file, the file name as title', async ({
+  page,
+}, testInfo) => {
+  await actAs(page, 'Bob');
+  const id = await createLine(page, unique(testInfo, 'sm'));
+  await page.goto(`/lines/${id}`);
+
+  // Protocol: three sequence files in one choice; a PNG in the same choice is refused by name.
+  const area = page.locator('#protocols .sequence-files:visible').first();
+  await page
+    .locator('#protocols input[type="file"][aria-label^="Upload"][aria-label$="sequence file"]')
+    .first()
+    .setInputFiles([...FILES.map(path), 'tests/fixtures/gel.png']);
+  await expect(toast(page, '3 files uploaded (version 4)')).toBeVisible();
+  await expect(toast(page, 'gel.png: Choose a sequence file')).toBeVisible();
+  for (const name of FILES)
+    await expect(area.getByRole('link', { name: `Download ${name}` })).toBeVisible();
+
+  // Reference: one file fills the title with the file name, the list shows it under the title.
+  await page.locator('#refs').getByRole('button', { name: '+ Add reference' }).click();
+  await dialog(page).getByLabel('Choose file').setInputFiles(path('trace.ab1'));
+  await expect(dialog(page).getByLabel('Title', { exact: true })).toHaveValue('trace.ab1');
+  await dialog(page).getByLabel('Title', { exact: true }).fill('Sanger run 1');
+  await dialog(page).getByRole('button', { name: 'Add reference' }).click();
+  await expect(toast(page, 'Reference added (version 5)')).toBeVisible();
+  const titled = page.locator('#refs .reference-item').filter({ hasText: 'Sanger run 1' });
+  await expect(titled).toContainText('trace.ab1');
+  await expect(titled.getByRole('link', { name: /^Download/ })).toBeVisible();
+
+  // Reference: several files make one reference each.
+  await page.locator('#refs').getByRole('button', { name: '+ Add reference' }).click();
+  await dialog(page).getByLabel('Choose file').setInputFiles(FILES.map(path));
+  await expect(dialog(page)).toContainText('Each of the 3 files becomes its own reference');
+  await dialog(page).getByRole('button', { name: 'Add reference' }).click();
+  await expect(toast(page, '3 references added (version 8)')).toBeVisible();
+  for (const name of FILES)
+    await expect(
+      page.locator('#refs .reference-item').filter({ hasText: name }).first(),
+    ).toBeVisible();
+  await noSideScroll(page);
+
+  // A link reference still says Open.
+  await page.locator('#refs').getByRole('button', { name: '+ Add reference' }).click();
+  await dialog(page).getByLabel('Title', { exact: true }).fill('ZFIN page');
+  await dialog(page).getByLabel('Link (https://…)').fill('https://zfin.org');
+  await dialog(page).getByRole('button', { name: 'Add reference' }).click();
+  await expect(
+    page
+      .locator('#refs .reference-item')
+      .filter({ hasText: 'ZFIN page' })
+      .getByRole('link', { name: /^Open/ }),
+  ).toBeVisible();
 });

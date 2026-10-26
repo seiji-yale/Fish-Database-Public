@@ -436,7 +436,7 @@ test('References: a missing link is flagged; only http(s) URLs and files can be 
     'https://example.org/paper',
   );
   await expect(refs.getByText('Note: Fig. 2')).toBeVisible();
-  await expect(refs.getByRole('link', { name: 'Open: Protocol PDF' })).toHaveAttribute(
+  await expect(refs.getByRole('link', { name: 'Download: Protocol PDF' })).toHaveAttribute(
     'href',
     '/api/attachments/pdf-1/file',
   );

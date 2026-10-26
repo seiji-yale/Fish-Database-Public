@@ -129,7 +129,8 @@ async function loadLineOverview(db: Db, id: string) {
         id: row.id,
         title: row.title,
         url: row.url,
-        attachment: attachment === undefined ? null : { id: attachment.id },
+        attachment:
+          attachment === undefined ? null : { id: attachment.id, fileName: attachment.file_name },
       };
     }),
   });
