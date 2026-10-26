@@ -82,6 +82,8 @@ test('a Guest sees the read-only banner, no Settings link and no "New Line" save
   await page.goto('/');
   await expect(page.locator('.guest-banner')).toContainText('Guest view');
   await expect(page.locator('.settings-link')).toHaveCount(0);
+  await expect(page.locator('.top-nav').getByRole('link', { name: 'New Line' })).toHaveCount(0);
+  await expect(page.locator('.chat-header-link')).toHaveCount(0);
   await actAs(page, 'Bob');
 });
 

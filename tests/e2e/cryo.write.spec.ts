@@ -103,7 +103,7 @@ test('inline errors for a backwards range and a half range; "Other…" takes a f
   ).toHaveCount(1);
 });
 
-test('Guests see no cryo controls; the menu opens the add form for members', async ({
+test('the menu opens the add form for members; a Guest has no Cryopreservation section', async ({
   page,
 }, testInfo) => {
   await actAs(page, 'Bob');
@@ -119,7 +119,7 @@ test('Guests see no cryo controls; the menu opens the add form for members', asy
 
   await actAs(page, 'Guest');
   await page.reload();
-  await expect(cryo(page).getByRole('button', { name: '+ Add record' })).toHaveCount(0);
+  await expect(page.locator('#cryo')).toHaveCount(0);
 });
 
 test('use vials: they leave the list, are listed as used, and their IDs cannot be used again', async ({
@@ -237,12 +237,9 @@ test('T-028: undo a vial use after a warning; the vial returns, its ID is free a
   await dialog(page).getByRole('button', { name: 'Record use' }).click();
   await expect(toast(page, 'Vial use recorded')).toBeVisible();
 
-  // A Guest sees the used list but no Undo button.
+  // A Guest does not see the cryopreservation records at all (T-032).
   await actAs(page, 'Guest');
   await page.reload();
-  await cryo(page)
-    .getByText(/Used vials/)
-    .click();
-  await expect(cryo(page).getByRole('button', { name: /^Undo the use/ })).toHaveCount(0);
+  await expect(page.locator('#cryo')).toHaveCount(0);
   await actAs(page, 'Bob');
 });

@@ -6,4 +6,4 @@
 - **Protocol:** A method and fields used to identify fish.
 - **Cryopreservation record:** A stored sample range, location, and date.
 - **Feeder:** A person who can see the line overview and the Feeding Schedule but cannot edit or chat.
-- **Guest:** A read-only session opened through a controlled link.
+- **Guest:** A read-only session opened through a controlled link. It sees the line overview only (a restricted role, like the Feeder), not records, history, exports or chat.

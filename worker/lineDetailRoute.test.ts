@@ -7,7 +7,7 @@ import { softDeleteLinePhenotype } from './db/queries/linePhenotypes';
 import { softDeleteLineReference } from './db/queries/lineReferences';
 import { createMigratedDb } from './db/testing/testDb';
 import { USER_ID } from './db/testing/builders';
-import { guestFetch } from './testBrowser';
+import { signedInFetch } from './testBrowser';
 import type { Bindings } from './middleware/session';
 import type { LineDetailDocument } from './lib/lineDetail';
 
@@ -15,7 +15,7 @@ async function setup() {
   const db = createMigratedDb();
   await loadFixture(db, fixture);
   const bindings = { DB: db, SESSION_SIGNING_KEY: 'test-signing-key' } satisfies Bindings;
-  const get = await guestFetch(bindings);
+  const get = await signedInFetch(bindings);
   return { get };
 }
 
@@ -102,7 +102,7 @@ describe('GET /api/lines/:id (T-009, FR-LINE-01, FR-ID-01/02, FR-CRYO-01/02, FR-
     await loadFixture(db, fixture);
     await softDeleteLinePhenotype(db, 'fx-demo_d4-phenotype-1', '2026-09-29T00:00:00Z');
     const bindings = { DB: db, SESSION_SIGNING_KEY: 'test-signing-key' } satisfies Bindings;
-    const response = await (await guestFetch(bindings))('/api/lines/fx-demo_d4');
+    const response = await (await signedInFetch(bindings))('/api/lines/fx-demo_d4');
     const doc = await response.json<LineDetailDocument>();
     expect(doc.phenotypes).toEqual([]);
   });
@@ -115,7 +115,7 @@ describe('GET /api/lines/:id (T-009, FR-LINE-01, FR-ID-01/02, FR-CRYO-01/02, FR-
     await softDeleteLineReference(db, 'fx-demo_c3-reference-1', '2026-09-29T00:00:00Z');
     await softDeleteCryoRecord(db, 'fx-demo_c3-cryo-1', '2026-09-29T00:00:00Z');
     const bindings = { DB: db, SESSION_SIGNING_KEY: 'test-signing-key' } satisfies Bindings;
-    const response = await (await guestFetch(bindings))('/api/lines/fx-demo_c3');
+    const response = await (await signedInFetch(bindings))('/api/lines/fx-demo_c3');
     const doc = await response.json<LineDetailDocument>();
     expect(doc.references).toEqual([]);
     expect(doc.cryoRecords).toEqual([]);
@@ -140,7 +140,7 @@ describe('GET /api/lines/:id (T-009, FR-LINE-01, FR-ID-01/02, FR-CRYO-01/02, FR-
       created_at: '2026-09-29T00:00:00Z',
     });
     const bindings = { DB: db, SESSION_SIGNING_KEY: 'test-signing-key' } satisfies Bindings;
-    const response = await (await guestFetch(bindings))('/api/lines/fx-demo_c3');
+    const response = await (await signedInFetch(bindings))('/api/lines/fx-demo_c3');
     const doc = await response.json<LineDetailDocument>();
     expect(doc.updatedAt).toBe('2026-09-29T00:00:00Z');
     expect(doc.updatedByName).toBe('Dan');

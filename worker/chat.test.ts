@@ -202,9 +202,7 @@ describe('T-017 chat endpoints', () => {
       (await (await client.call('/api/messages/unread-count')).json<{ unread: number }>()).unread,
     ).toBe(1);
     await client.actAs('Guest');
-    expect(
-      (await (await client.call('/api/messages/unread-count')).json<{ unread: number }>()).unread,
-    ).toBe(0);
+    expect((await client.call('/api/messages/unread-count')).status).toBe(403);
 
     await client.actAs('Bob');
     const all = await client.call('/api/messages', { body: 'Please review this, @ALL.' });

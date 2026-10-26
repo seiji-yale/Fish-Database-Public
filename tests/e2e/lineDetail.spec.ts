@@ -60,14 +60,19 @@ test('demo_c3: every FR-LINE-01 summary field is visible, and Source: REPOSITORY
   });
 });
 
-test('a Guest sees read-only line details and the Change Activity reason', async ({ page }) => {
+test('a Guest sees the overview card only: no edit, no activity menu, no records', async ({
+  page,
+}) => {
   await actAs(page, 'Guest');
   await page.goto('/lines/fx-demo_c3');
+  await expect(page.getByRole('heading', { name: 'demo_c3', level: 1 })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
-  await page.locator('.activity-menu summary').click();
-  await expect(
-    page.locator('.activity-menu__items').getByRole('button', { name: /^Start Breeding/ }),
-  ).toContainText('Guests cannot change line data');
+  await expect(page.locator('.activity-menu')).toHaveCount(0);
+  for (const id of ['protocols', 'cryo', 'activity', 'chat', 'history'])
+    await expect(page.locator(`#${id}`)).toHaveCount(0);
+  await expect(page.locator('.overview-hint')).toHaveText(
+    'Guest view: details, records and history are not shown.',
+  );
   await actAs(page, 'Bob');
 });
 

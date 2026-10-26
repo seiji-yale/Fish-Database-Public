@@ -87,6 +87,7 @@ async function restorableContent(db: Bindings['DB'], lineId: string, versionNoTe
 
 /** What restoring this version would change, so the Admin can confirm knowingly (T-012 step 3). */
 lineEditRoutes.get('/lines/:id/restore/:versionNo/preview', async (c) => {
+  await requireCapability(c, 'lines.read_full');
   const db = c.env.DB;
   const lineId = c.req.param('id');
   const document = await loadLineDocument(db, lineId);

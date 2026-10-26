@@ -229,9 +229,9 @@ chatRoutes.get('/lines/:id/messages', async (c) => {
   const before = parseCursor(beforeValue.data);
   if (beforeValue.data !== undefined && before === null)
     throw new ApiError(400, 'INVALID_INPUT', messages.invalidInput);
+  const viewer = await requireCapability(c, 'chat.read');
   const lineId = c.req.param('id');
   await lineExists(c.env.DB, lineId);
-  const viewer = await actingUser(c);
   return c.json(await listMessages(c.env.DB, lineId, before, viewer.id));
 });
 
@@ -241,7 +241,7 @@ chatRoutes.get('/messages', async (c) => {
   const before = parseCursor(beforeValue.data);
   if (beforeValue.data !== undefined && before === null)
     throw new ApiError(400, 'INVALID_INPUT', messages.invalidInput);
-  const viewer = await actingUser(c);
+  const viewer = await requireCapability(c, 'chat.read');
   return c.json(await listMessages(c.env.DB, null, before, viewer.id));
 });
 
@@ -434,8 +434,8 @@ chatRoutes.patch('/messages/:mid/request', async (c) => {
 });
 
 async function markRead(c: Context<{ Bindings: Bindings }>, remove = false) {
+  const acting = await requireCapability(c, 'chat.read');
   const message = await messageById(c.env.DB, c.req.param('mid') ?? '');
-  const acting = await actingUser(c);
   if (!remove && acting.id === message.user_id)
     throw new ApiError(403, 'OWN_MESSAGE', messages.chatReadOwn);
   if (remove) {
@@ -465,7 +465,7 @@ chatRoutes.post('/messages/:mid/read', (c) => markRead(c));
 chatRoutes.delete('/messages/:mid/read', (c) => markRead(c, true));
 
 chatRoutes.get('/messages/unread-count', async (c) => {
-  const acting = await actingUser(c);
+  const acting = await requireCapability(c, 'chat.read');
   const [unread, openRequests] = await Promise.all([
     c.env.DB.prepare(
       `SELECT COUNT(*) AS count FROM chat_messages m
@@ -483,7 +483,7 @@ chatRoutes.get('/messages/unread-count', async (c) => {
 });
 
 chatRoutes.post('/messages/read-all', async (c) => {
-  const acting = await actingUser(c);
+  const acting = await requireCapability(c, 'chat.read');
   const unread = await c.env.DB.prepare(
     `SELECT COUNT(*) AS count FROM chat_messages m
      JOIN chat_mentions cm ON cm.message_id = m.id AND cm.user_id = ? AND cm.deleted_at IS NULL

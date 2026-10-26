@@ -8,7 +8,7 @@ Migration numbers follow the repository: 0012 is taken (`0012_cryo_use_undo`), s
 | Ticket | Title                                                    | State | Depends on |
 | ------ | -------------------------------------------------------- | ----- | ---------- |
 | T-031  | Feeder role and capability model                         | Done  | —          |
-| T-032  | Restricted view for Guests and Feeders                   | Draft | T-031      |
+| T-032  | Restricted view for Guests and Feeders                   | Ready | T-031      |
 | T-033  | Feeding Schedule data and API                            | Draft | T-031      |
 | T-034  | Feeding Schedule page                                    | Draft | T-033      |
 | T-035  | Monthly summary export and Notes & links                 | Draft | T-034      |

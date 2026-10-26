@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { listEnumerations } from '../db/queries/enumerations';
 import { getSetting } from '../db/queries/settings';
 import { protocolDefaultsFrom } from '../lib/protocolWrite';
+import { requireCapability } from '../lib/permissions';
 import { ApiError } from '../lib/errors';
 import { messages } from '../lib/messages';
 import type { Bindings } from '../middleware/session';
@@ -18,6 +19,7 @@ const query = z.object({
 export const enumerationRoutes = new Hono<{ Bindings: Bindings }>();
 
 enumerationRoutes.get('/enumerations', async (c) => {
+  await requireCapability(c, 'lines.read_full');
   const parsed = query.safeParse(c.req.query());
   if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', messages.invalidInput);
   const rows = await listEnumerations(c.env.DB, parsed.data.kind);

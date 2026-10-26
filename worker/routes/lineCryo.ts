@@ -14,6 +14,7 @@ import {
 import { labToday } from '../../domain/dates';
 import { nowIso } from '../db/ids';
 import { requireAuthor } from '../lib/attribution';
+import { requireCapability } from '../lib/permissions';
 import {
   addCryoChange,
   editCryoChange,
@@ -62,6 +63,7 @@ async function write(c: Ctx, input: Omit<LineWriteInput, 'lineId'>) {
 
 /** FR-CRYO-03: max existing ID over all lines' live records + 1, e.g. `C0637`. */
 lineCryoRoutes.get('/cryo/next-id', async (c) => {
+  await requireCapability(c, 'lines.write');
   const { results } = await c.env.DB.prepare(
     'SELECT cryo_id_start, cryo_id_end FROM cryo_records WHERE deleted_at IS NULL',
   ).all<{ cryo_id_start: string | null; cryo_id_end: string | null }>();

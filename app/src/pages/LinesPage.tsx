@@ -26,6 +26,7 @@ import { getUsers, type SessionUser } from '../session';
 import { strings } from '../strings';
 import { visibleSearchInput } from '../slashShortcut';
 import { onPageRestore, rememberLinesUrl } from '../linesReturn';
+import { useActingUser } from '../useActingUser';
 
 interface UrlState {
   view: LineListView;
@@ -312,7 +313,7 @@ const BASE_COLUMNS: readonly DataColumn<LineListItem>[] = [
   {
     key: 'isCryopreserved',
     label: strings.cryopreserved,
-    render: (item) => (item.isCryopreserved ? strings.yes : strings.no),
+    render: (item) => (item.isCryopreserved === true ? strings.yes : strings.no),
   },
   {
     key: 'references',
@@ -331,7 +332,9 @@ function optionalColumns(
       key: 'lastUpdateAt',
       label: strings.columnLastUpdate,
       render: (item) =>
-        `${formatDateTime(item.lastUpdateAt)} (${userNames[item.lastUpdateBy] ?? item.lastUpdateBy})`,
+        item.lastUpdateAt === undefined
+          ? strings.emptyValue
+          : `${formatDateTime(item.lastUpdateAt)} (${userNames[item.lastUpdateBy ?? ''] ?? item.lastUpdateBy ?? ''})`,
     });
   if (enabled.has('ageMonths'))
     columns.push({
@@ -365,6 +368,9 @@ const SORTABLE_KEYS = new Set([
 ]);
 
 export function LinesPage() {
+  const acting = useActingUser();
+  // Guests and Feeders get the overview rows only (FR-GUEST-06): fewer columns and filters, no export.
+  const restricted = acting.name !== null && !acting.can('lines.read_full');
   const [state, setState] = useState<UrlState>(() => stateFromLocation());
   const [searchInput, setSearchInput] = useState(() => stateFromLocation().q ?? '');
   const [items, setItems] = useState<LineListItem[] | null>(null);
@@ -414,12 +420,13 @@ export function LinesPage() {
   );
 
   useEffect(() => {
+    if (restricted) return;
     getUsers()
       .then((list) => {
         setUsers(list);
       })
       .catch(() => undefined);
-  }, []);
+  }, [restricted]);
 
   // Fetches whenever the (URL-driven) query changes. `items`/`error` are reset by whatever
   // triggered the change (`navigate`, the popstate handler, or the initial `useState`), not here:
@@ -432,8 +439,8 @@ export function LinesPage() {
       sort: state.sort,
       dir: state.dir,
       idMethod: state.idMethod,
-      cryo: state.cryo,
-      breedSoon: state.breedSoon,
+      cryo: restricted ? undefined : state.cryo,
+      breedSoon: restricted ? undefined : state.breedSoon,
     })
       .then((response) => {
         if (!cancelled) setItems(response.items);
@@ -452,6 +459,7 @@ export function LinesPage() {
     state.idMethod,
     state.cryo,
     state.breedSoon,
+    restricted,
     reloadKey,
   ]);
 
@@ -524,7 +532,17 @@ export function LinesPage() {
   }
 
   const userNames = Object.fromEntries(users.map((user) => [user.id, user.name]));
-  const columns = [...BASE_COLUMNS, ...optionalColumns(optionalColumnKeys, userNames)];
+  const enabledOptional = new Set(
+    [...optionalColumnKeys].filter((key) => !restricted || key === 'ageMonths'),
+  );
+  const columns = [
+    ...BASE_COLUMNS.filter((column) => !restricted || column.key !== 'isCryopreserved'),
+    ...optionalColumns(enabledOptional, userNames),
+  ];
+  const sortPresets = restricted
+    ? SORT_PRESETS.filter((preset) => preset.value !== 'lastUpdateAt:desc')
+    : SORT_PRESETS;
+  const optionalColumnChoices = restricted ? (['ageMonths'] as const) : OPTIONAL_COLUMN_KEYS;
 
   return (
     <section className="lines-page">
@@ -564,7 +582,7 @@ export function LinesPage() {
         <label className="filter-field">
           <span className="filter-field__label">{strings.sortBy}</span>
           <select value={sortPresetValue(state)} onChange={onSortPresetChange}>
-            {SORT_PRESETS.map((preset) => (
+            {sortPresets.map((preset) => (
               <option key={preset.value} value={preset.value}>
                 {preset.label}
               </option>
@@ -587,35 +605,40 @@ export function LinesPage() {
             ))}
           </select>
         </label>
-        <div className="filter-field">
-          <span className="filter-field__label" aria-hidden="true">
-            {strings.filterCryopreserved}
-          </span>
-          <SegmentedControl
-            label={strings.filterCryopreserved}
-            options={CRYO_LABELS}
-            value={CRYO_VALUE_TO_LABEL[state.cryo ?? 'any']}
-            onChange={onCryoChange}
-          />
-        </div>
-        <div className="filter-field">
-          <span className="filter-field__label" aria-hidden="true">
-            {strings.filterUpcomingBreeding}
-          </span>
-          <button
-            type="button"
-            aria-pressed={state.breedSoon === true}
-            className={state.breedSoon === true ? 'is-selected' : ''}
-            onClick={onBreedSoonToggle}
-          >
-            <span aria-hidden="true">{strings.breedSoonIcon}</span> {strings.filterBreedSoonOnly}
-          </button>
-        </div>
+        {restricted ? null : (
+          <>
+            <div className="filter-field">
+              <span className="filter-field__label" aria-hidden="true">
+                {strings.filterCryopreserved}
+              </span>
+              <SegmentedControl
+                label={strings.filterCryopreserved}
+                options={CRYO_LABELS}
+                value={CRYO_VALUE_TO_LABEL[state.cryo ?? 'any']}
+                onChange={onCryoChange}
+              />
+            </div>
+            <div className="filter-field">
+              <span className="filter-field__label" aria-hidden="true">
+                {strings.filterUpcomingBreeding}
+              </span>
+              <button
+                type="button"
+                aria-pressed={state.breedSoon === true}
+                className={state.breedSoon === true ? 'is-selected' : ''}
+                onClick={onBreedSoonToggle}
+              >
+                <span aria-hidden="true">{strings.breedSoonIcon}</span>
+                {` ${strings.filterBreedSoonOnly}`}
+              </button>
+            </div>
+          </>
+        )}
       </div>
       <div className="lines-toolbar">
         <details className="lines-columns">
           <summary>{strings.columnsToggle}</summary>
-          {OPTIONAL_COLUMN_KEYS.map((key) => (
+          {optionalColumnChoices.map((key) => (
             <label key={key}>
               <input
                 type="checkbox"
@@ -632,9 +655,11 @@ export function LinesPage() {
             </label>
           ))}
         </details>
-        <a className="button--primary" href={linesCsvUrl(state)}>
-          {strings.exportCsv}
-        </a>
+        {acting.can('lines.export') ? (
+          <a className="button--primary" href={linesCsvUrl(state)}>
+            {strings.exportCsv}
+          </a>
+        ) : null}
       </div>
       {error !== null ? (
         <p role="alert">{error}</p>

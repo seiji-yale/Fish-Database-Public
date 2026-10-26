@@ -127,3 +127,29 @@ export interface LineDetailDocument {
 
 export const getLineDetail = (id: string) =>
   request<LineDetailDocument>(`/api/lines/${encodeURIComponent(id)}`);
+
+/** What Guests and Feeders get for a line (FR-GUEST-07): the overview, nothing else. */
+export interface LineOverviewDocument {
+  restricted: true;
+  id: string;
+  name: string;
+  status: LineStatus;
+  gene: string | null;
+  phenotypes: string[];
+  dob: string | null;
+  ageMonths: number | null;
+  idedNumber: number;
+  lastIdDate: string | null;
+  idMethods: { label: string; typeName: string }[];
+  references: {
+    id: string;
+    title: string;
+    url: string | null;
+    hasAttachment: boolean;
+    attachmentId: string | null;
+  }[];
+}
+
+/** The Line Detail page's read: the full document, or the overview for a restricted role. */
+export const getLineView = (id: string) =>
+  request<LineDetailDocument | LineOverviewDocument>(`/api/lines/${encodeURIComponent(id)}`);

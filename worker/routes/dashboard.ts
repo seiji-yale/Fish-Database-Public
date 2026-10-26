@@ -4,7 +4,9 @@ import { getSetting } from '../db/queries/settings';
 import { listCryoRecordsByLines } from '../db/queries/cryoRecords';
 import { listCurrentIdProtocols } from '../db/queries/idProtocols';
 import { listLines } from '../db/queries/lines';
+import { can } from '../../domain/permissions';
 import { actingUser } from '../lib/attribution';
+import { requireCapability } from '../lib/permissions';
 import { ApiError } from '../lib/errors';
 import { messages } from '../lib/messages';
 import type { ActivityRow } from '../db/types';
@@ -121,6 +123,21 @@ dashboardRoutes.get('/dashboard', async (c) => {
     getSetting(db, 'upcoming_breeding_months'),
     actingUser(c),
   ]);
+  if (!can(acting.role, 'lines.read_full')) {
+    // FR-GUEST-09: three counters and nothing else; OQ-42 keeps Cryopreserved visible.
+    const cryoRecords = await listCryoRecordsByLines(
+      db,
+      lines.map((line) => line.id),
+    );
+    const { counters } = buildDashboardLists({
+      lines,
+      protocols: [],
+      cryoRecords,
+      thresholdMonths: thresholdFromSetting(thresholdRaw),
+      today: labToday(),
+    });
+    return c.json({ today: labToday(), restricted: true, counters });
+  }
   const lineIds = lines.map((line) => line.id);
   const protocolIds = [
     ...new Set(
@@ -225,6 +242,7 @@ const activityQuery = z.object({
 });
 
 dashboardRoutes.get('/activities', async (c) => {
+  await requireCapability(c, 'activity.read');
   const parsed = activityQuery.safeParse(c.req.query());
   const before = parsed.success ? parseCursor(parsed.data.before) : null;
   if (!parsed.success || (parsed.data.before !== undefined && before === null))

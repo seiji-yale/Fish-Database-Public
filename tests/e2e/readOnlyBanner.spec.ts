@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { capabilitiesOf } from '../../domain/permissions';
 
 /** T-021: while the Admin restores the database everyone sees a banner (the session says `readOnly`). */
 test('the read-only banner shows for everyone', async ({ page }) => {
@@ -7,6 +8,7 @@ test('the read-only banner shows for everyone', async ({ page }) => {
       json: {
         appName: 'Fish Database',
         user: { id: 'u', name: 'Bob', role: 'member' },
+        capabilities: capabilitiesOf('member'),
         mustChangePassword: false,
         readOnly: true,
         mirrorStale: false,

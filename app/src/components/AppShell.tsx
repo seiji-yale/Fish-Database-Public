@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react';
+import type { Capability } from '../../../domain/permissions';
 import {
   APP_NAME_CHANGED,
   getSession,
@@ -8,7 +9,7 @@ import {
 } from '../session';
 import { READ_ONLY_CHANGED } from '../adminEvents';
 import { setAppName, strings } from '../strings';
-import { ACTING_USER_CHANGED } from '../useActingUser';
+import { ACTING_USER_CHANGED, rememberSession } from '../useActingUser';
 import { loadProtocolDefaults } from '../protocolDefaults';
 import { ChangePasswordPage, SignInPage } from '../pages/AccountPages';
 import { AccountMenu } from './AccountMenu';
@@ -16,10 +17,10 @@ import { HeaderSearch } from './HeaderSearch';
 import { installSlashShortcut } from '../slashShortcut';
 import { Toast } from './shared';
 import { CHAT_STATE_CHANGED, getChatCounts } from '../chatApi';
-const navigation = [
+const navigation: { href: string; label: string; capability?: Capability }[] = [
   { href: '/', label: strings.dashboard },
   { href: '/lines', label: strings.lines },
-  { href: '/lines/new', label: strings.newLine },
+  { href: '/lines/new', label: strings.newLine, capability: 'lines.write' },
   // The phone tab opens Lines with its search box focused (there is no separate search page).
   { href: '/lines#search', label: strings.search },
 ];
@@ -31,6 +32,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const user = session?.user ?? null;
+  /** What the signed-in role may do; the API enforces the same table (BR-15, FR-GUEST-01). */
+  const can = (capability: Capability) => session?.capabilities.includes(capability) === true;
+  const visibleNavigation = navigation.filter(
+    (item) => item.capability === undefined || can(item.capability),
+  );
+  const readsChat = can('chat.read');
 
   function loadSession(): void {
     void getSession()
@@ -39,6 +46,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           setAppName(next.appName);
           document.title = next.appName;
         }
+        rememberSession(next);
         setSession(next);
         setExpired(false);
         window.dispatchEvent(new Event(ACTING_USER_CHANGED));
@@ -108,7 +116,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
   const userId = user?.id ?? null;
   useEffect(() => {
-    if (userId === null) return;
+    // Roles without chat (Guest, Feeder) never ask for the unread count.
+    if (userId === null || !readsChat) return;
     const refreshUnread = () => {
       void getChatCounts()
         .then((counts) => {
@@ -125,7 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.removeEventListener(CHAT_STATE_CHANGED, refreshUnread);
       window.removeEventListener('focus', refreshUnread);
     };
-  }, [userId]);
+  }, [userId, readsChat]);
 
   if (session === undefined) return <main className="account-screen" aria-busy="true" />;
   if (user === null) return <SignInPage notice={expired ? strings.loginExpired : undefined} />;
@@ -141,21 +150,27 @@ export function AppShell({ children }: { children: ReactNode }) {
           {strings.appName}
         </a>
         <nav className="top-nav" aria-label={strings.appName}>
-          {navigation.slice(0, 3).map((item) => (
-            <a key={item.href} href={item.href}>
-              {item.label}
-            </a>
-          ))}
+          {visibleNavigation
+            .filter((item) => item.href !== '/lines#search')
+            .map((item) => (
+              <a key={item.href} href={item.href}>
+                {item.label}
+              </a>
+            ))}
         </nav>
         <HeaderSearch />
-        <a
-          className="chat-header-link"
-          href="/#unread-messages"
-          aria-label={strings.chatUnreadBadge(unreadMessages)}
-        >
-          {strings.labChat}
-          {unreadMessages > 0 ? <span className="chat-header-badge">{unreadMessages}</span> : null}
-        </a>
+        {readsChat ? (
+          <a
+            className="chat-header-link"
+            href="/#unread-messages"
+            aria-label={strings.chatUnreadBadge(unreadMessages)}
+          >
+            {strings.labChat}
+            {unreadMessages > 0 ? (
+              <span className="chat-header-badge">{unreadMessages}</span>
+            ) : null}
+          </a>
+        ) : null}
         <AccountMenu
           user={user}
           onChangePassword={() => {
@@ -163,7 +178,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           }}
           onMessage={setToast}
         />
-        {user.role === 'admin' ? (
+        {can('admin.*') ? (
           <a className="settings-link" href="/settings" aria-label={strings.settings}>
             {strings.settingsIcon}
           </a>
@@ -191,7 +206,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </main>
       <nav className="bottom-tabs" aria-label={strings.appName}>
-        {navigation.map((item) => (
+        {visibleNavigation.map((item) => (
           <a key={item.href} href={item.href}>
             {item.label}
           </a>

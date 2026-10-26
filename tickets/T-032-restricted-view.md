@@ -2,7 +2,7 @@
 
 |                  |                                                                                    |
 | ---------------- | ---------------------------------------------------------------------------------- |
-| State            | Draft                                                                              |
+| State            | Ready                                                                              |
 | Size             | L                                                                                  |
 | Phase            | 5 (Feeding Schedule & restricted view)                                             |
 | Depends on       | T-031                                                                              |
@@ -101,3 +101,14 @@ allow-list shaping and 403 refusals (ADR-0006, BR-15). Members and Admins see ex
 ## Review Log
 
 <!-- Append Step Reports, Step Reviews, Ticket Review, Owner feedback here, newest at the bottom. -->
+
+### Steps 1 to 4 — 2026-10-26 — implementer
+
+- Step 1: `domain/lineOverview.ts` (allow-list, key-set tests). `GET /api/lines`, `GET /api/lines/:id` and `GET /api/dashboard` return the overview shapes for restricted roles (`restricted: true`, no ETag); the overview loads only the line, phenotypes, protocols and references, never the records a restricted role must not see.
+- Step 2: `requireCapability` added to `lines.csv`, `lines/:id.csv`, `activities`, all chat reads and marks, `enumerations`, `users` (Guests), `cryo/next-id`, `lines/check-name`, restore preview. `attachments/:id/file` lets restricted roles open `reference_file` only. `worker/routeCoverage.test.ts` classifies all 69 routes and calls each as Guest, Feeder, Member and Admin; `worker/restrictedView.test.ts` checks the response keys.
+- Step 3 and 4: `NotAvailablePage` and `RequireCapability`; `LineOverviewCard`; Dashboard, Line List (9 columns, ID Method filter only, no export) and AppShell (nav, Lab Chat link and unread polling by `can()`); the `role ===` permission checks in `app/src` now use `can()` (the Guest banner, the Guest hint and the admin header tint stay identity-based). `useActingUser` starts from the session the shell already read, so a restricted page does not flash the full layout.
+- Docs: `01-requirements.md`, `04-ui-spec.md` (new 5.8), `07-glossary.md`. The ticket also names `user-guide.md`, `00-open-questions.md` and `tools/docs/take-guide-screenshots.ts`; none of them exist in this public repository, so nothing was changed there.
+- Deviations: (1) the route-coverage table has an extra `roster` class for `GET /api/users` (Feeders may list users, Guests may not). (2) The overview reference carries `attachmentId` beside `hasAttachment`, because `Open` needs the file id. (3) The Dashboard Cryopreserved counter is a plain figure for restricted roles (the Cryopreserved filter is not offered). (4) The account-menu `Feeding Schedule` entry is not added; it arrives with T-034. (5) `/feeding` is closed to roles without `feeding.read` and shows a placeholder to the others until T-034.
+- Existing tests that read full data as a Guest now sign in as a Member; Guest-specific e2e tests were rewritten for the overview (`restrictedView.spec.ts` is new). Two e2e specs that mock `/api/session` now include `capabilities`.
+- Checks: `npm run typecheck`, `lint`, `test` (756 passed), `test:domain-coverage`, `check:english`, `check:public`, `check:free-tier` green; `npm run test:e2e` 348 passed, 25 skipped. One full run showed a single failure in `lineDetail.spec.ts` "two PCR protocols" on phone-375 that did not recur (3 repeats alone, then a full rerun green).
+- Not done: Feeder in the browser (no Feeder in the e2e seed; Feeder is covered by the route and response tests), owner acceptance on the preview, `check:python`.

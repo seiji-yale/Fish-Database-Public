@@ -268,7 +268,7 @@ describe('POST /api/lines (T-011, FR-NEW-01…03)', () => {
 describe('GET /api/lines/check-name (FR-NEW-02, BR-8)', () => {
   it('says whether a name is free, ignoring case and surrounding spaces', async () => {
     const { db, call, actAs } = browser();
-    await actAs('Guest');
+    await actAs('Carol');
     await loadFixture(db, fixture);
     const free = await call('/api/lines/check-name?name=brand-new');
     expect(await free.json()).toEqual({ available: true });
@@ -279,7 +279,7 @@ describe('GET /api/lines/check-name (FR-NEW-02, BR-8)', () => {
 
   it('is not mistaken for a line id', async () => {
     const { call, actAs } = browser();
-    await actAs('Guest');
+    await actAs('Carol');
     const response = await call('/api/lines/check-name?name=x');
     expect(response.status).toBe(200);
   });
@@ -288,7 +288,7 @@ describe('GET /api/lines/check-name (FR-NEW-02, BR-8)', () => {
 describe('GET /api/enumerations', () => {
   it('lists the active values of one kind in display order', async () => {
     const { call, actAs } = browser();
-    await actAs('Guest');
+    await actAs('Carol');
     const attributes = await (await call('/api/enumerations?kind=attribute_key')).json();
     expect(attributes).toEqual({ kind: 'attribute_key', values: ['Source'] });
     const fluorophores = await (
@@ -301,7 +301,7 @@ describe('GET /api/enumerations', () => {
 
   it('rejects an unknown kind', async () => {
     const { call, actAs } = browser();
-    await actAs('Guest');
+    await actAs('Carol');
     const response = await call('/api/enumerations?kind=nonsense');
     expect(response.status).toBe(400);
   });

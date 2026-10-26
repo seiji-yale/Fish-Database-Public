@@ -20,21 +20,24 @@ export interface LineListItem {
   ageMonths: number | null;
   status: LineStatus;
   idMethod: string;
-  idMethodType: string;
+  idMethodType?: string;
   lastIdDate: string | null;
   idedNumber: number;
-  isCryopreserved: boolean;
-  cryoSummary: string;
-  needsBreeding: boolean;
   missingDob: boolean;
   references: LineListReference[];
-  notes: string | null;
-  lastUpdateAt: string;
-  lastUpdateBy: string;
-  attributes: Record<string, string>;
+  /** Not sent to restricted roles (Guest, Feeder: FR-GUEST-05): */
+  isCryopreserved?: boolean;
+  cryoSummary?: string;
+  needsBreeding?: boolean;
+  notes?: string | null;
+  lastUpdateAt?: string;
+  lastUpdateBy?: string;
+  attributes?: Record<string, string>;
 }
 
 export interface LineListResponse {
+  /** `true` when the server sent the overview rows only (Guest, Feeder). */
+  restricted?: boolean;
   view: LineListView;
   total: number;
   items: LineListItem[];

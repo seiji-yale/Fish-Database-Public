@@ -10,6 +10,7 @@ import {
   markAllChatRead,
   type DashboardActivity,
   type DashboardResponse,
+  type RestrictedDashboardResponse,
 } from '../dashboardApi';
 import { strings } from '../strings';
 import { ChatPanel } from '../components/ChatPanel';
@@ -75,6 +76,74 @@ function PickLineDialog({
         </div>
       </form>
     </Modal>
+  );
+}
+
+/** Guests and Feeders (FR-GUEST-09): greeting, the three counters and two buttons. */
+function RestrictedDashboard({ data }: { data: RestrictedDashboardResponse }) {
+  const acting = useActingUser();
+  const counters: { icon: DashboardIconName; label: string; value: number; href: string }[] = [
+    {
+      icon: 'activeLines',
+      label: strings.activeLines,
+      value: data.counters.active,
+      href: '/lines?view=active',
+    },
+    {
+      icon: 'closedLines',
+      label: strings.closedLines,
+      value: data.counters.closed,
+      href: '/lines?view=closed',
+    },
+    {
+      icon: 'cryopreserved',
+      label: strings.cryopreserved,
+      value: data.counters.cryopreserved,
+      href: '/lines?view=all&cryo=yes',
+    },
+  ];
+  return (
+    <div className="dashboard-page">
+      <h1>{strings.dashboard}</h1>
+      <HeaderSearch placement="page" />
+      {acting.name === null ? null : (
+        <p className="dashboard-hello" data-testid="dashboard-hello">
+          <strong>{strings.helloUser(acting.name)}</strong>
+          {acting.role === 'guest' ? ` · ${strings.helloGuestHint}` : ''}
+        </p>
+      )}
+      <section className="dashboard-counters" aria-label={strings.dashboard}>
+        {counters.map((counter) => {
+          const content = (
+            <>
+              <span className="dashboard-counter__label">
+                <DashboardIcon name={counter.icon} />
+                {counter.label}
+              </span>
+              <strong>{counter.value}</strong>
+            </>
+          );
+          // The Cryopreserved filter is not offered to restricted roles, so that counter is a plain figure.
+          return counter.icon === 'cryopreserved' ? (
+            <div className="dashboard-counter" key={counter.label}>
+              {content}
+            </div>
+          ) : (
+            <a className="dashboard-counter" href={counter.href} key={counter.label}>
+              {content}
+            </a>
+          );
+        })}
+      </section>
+      <nav className="dashboard-navigation" aria-label={strings.dashboard}>
+        <a className="button--primary" href="/lines?view=active">
+          {strings.seeActiveLines}
+        </a>
+        <a className="button--primary" href="/lines?view=all">
+          {strings.seeAllLines}
+        </a>
+      </nav>
+    </div>
   );
 }
 
@@ -509,7 +578,7 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
 }
 
 export function DashboardPage() {
-  const [data, setData] = useState<DashboardResponse | null>(null);
+  const [data, setData] = useState<DashboardResponse | RestrictedDashboardResponse | null>(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [dataVersion, setDataVersion] = useState(0);
@@ -568,5 +637,6 @@ export function DashboardPage() {
         <Skeleton lines={6} />
       </section>
     );
+  if (data.restricted === true) return <RestrictedDashboard data={data} />;
   return <DashboardContent key={dataVersion} initial={data} />;
 }

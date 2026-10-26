@@ -100,10 +100,10 @@ test('AC3: items that do not apply are disabled and say why', async ({ page }, t
   await reopen.click({ force: true });
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
+  // A Guest gets the overview card, which has no Change Activity menu at all (T-032).
   await actAs(page, 'Guest');
   await page.reload();
-  await menu(page).click();
-  await expect(item(page, /^Start Breeding/)).toContainText('Guests cannot change line data');
+  await expect(page.locator('.activity-menu')).toHaveCount(0);
 });
 
 test('the OQ-31 date messages appear inline on the genotyping form', async ({ page }, testInfo) => {

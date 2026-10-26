@@ -411,7 +411,7 @@ export function ChatPanel({ scope, compact = false }: { scope: ChatScope; compac
           {error}
         </p>
       ) : null}
-      {acting.role === 'guest' ? (
+      {!acting.can('chat.write') ? (
         <p className="chat-guest-note">{strings.chatGuestNote}</p>
       ) : (
         <form

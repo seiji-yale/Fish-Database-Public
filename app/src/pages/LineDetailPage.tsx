@@ -33,7 +33,8 @@ import { formatDate, formatDateTime } from '../dateFormat';
 import { HttpError } from '../api';
 import { takeFlash } from '../flash';
 import { linesReturnUrl, onPageRestore } from '../linesReturn';
-import { getLineDetail, type LineDetailDocument } from '../lineDetailApi';
+import { LineOverviewCard } from '../components/LineOverviewCard';
+import { getLineView, type LineDetailDocument, type LineOverviewDocument } from '../lineDetailApi';
 import type { EditResult } from '../lineEditApi';
 import { strings } from '../strings';
 import { useActingUser } from '../useActingUser';
@@ -145,6 +146,7 @@ function forgetActionInUrl(): void {
 
 export function LineDetailPage({ id }: { id: string }) {
   const [line, setLine] = useState<LineDetailDocument | null>(null);
+  const [overview, setOverview] = useState<LineOverviewDocument | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A one-shot confirmation left by the page that sent us here (e.g. "Line X was created", T-011).
@@ -163,9 +165,11 @@ export function LineDetailPage({ id }: { id: string }) {
   const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => {
     let cancelled = false;
-    getLineDetail(id)
+    getLineView(id)
       .then((document) => {
-        if (!cancelled) setLine(document);
+        if (cancelled) return;
+        if ('restricted' in document) setOverview(document);
+        else setLine(document);
       })
       .catch((cause: unknown) => {
         if (cancelled) return;
@@ -196,6 +200,13 @@ export function LineDetailPage({ id }: { id: string }) {
     );
   }
   if (error !== null) return <p role="alert">{error}</p>;
+  if (overview !== null)
+    return (
+      <LineOverviewCard
+        line={overview}
+        hint={acting.role === 'guest' ? strings.overviewHintGuest : strings.overviewHintFeeder}
+      />
+    );
   if (line === null) return <Skeleton lines={8} />;
 
   return (
@@ -222,7 +233,7 @@ export function LineDetailPage({ id }: { id: string }) {
         <h1>{line.name}</h1>
         <StatusBadge status={line.status} />
         <span>{`${strings.gene}: ${line.gene ?? strings.emptyValue}`}</span>
-        {acting.role === 'guest' ? null : (
+        {acting.can('lines.write') ? (
           <button
             type="button"
             onClick={() => {
@@ -231,7 +242,7 @@ export function LineDetailPage({ id }: { id: string }) {
           >
             {strings.edit}
           </button>
-        )}
+        ) : null}
         <details className="export-menu">
           <summary>{`${strings.exportMenu} ${strings.dropdownIcon}`}</summary>
           <div className="export-menu__items">
@@ -314,7 +325,7 @@ export function LineDetailPage({ id }: { id: string }) {
             <HistoryPanel
               versions={line.versions}
               protocols={line.protocols}
-              {...(acting.role === 'admin'
+              {...(acting.can('admin.*')
                 ? {
                     restore: {
                       lineId: line.id,

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { insertAttachment, softDeleteAttachment } from './db/queries/attachments';
 import { makeAttachment } from './db/testing/builders';
 import { createMigratedDb } from './db/testing/testDb';
-import { guestFetch } from './testBrowser';
+import { signedInFetch } from './testBrowser';
 import type { Bindings } from './middleware/session';
 
 /** The one method the route uses from an R2 bucket. */
@@ -24,7 +24,7 @@ async function setup(objects: Record<string, string> = {}, withBucket = true) {
     SESSION_SIGNING_KEY: 'test-signing-key',
     ...(withBucket ? { FILES: fakeBucket(objects) } : {}),
   } satisfies Bindings;
-  return { db, get: await guestFetch(bindings) };
+  return { db, get: await signedInFetch(bindings) };
 }
 
 describe('GET /api/attachments/:id/file (T-009 Step 3)', () => {

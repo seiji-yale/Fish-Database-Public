@@ -90,13 +90,15 @@ test('T-017: an Admin posts as themselves, with no "who sends" dialog (ADR-0005)
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-test('T-027: a Guest reads the chat but has no message box', async ({ page }) => {
+test('T-032: a Guest sees no chat: no panel, no Lab Chat link, no messages from the API', async ({
+  page,
+}) => {
   await actAs(page, 'Guest');
   await page.goto('/lines/fx-demo_c3');
-  await expect(page.getByLabel('Write a message', { exact: true })).toHaveCount(0);
-  await expect(
-    page.getByText('Guests can read messages but cannot write them.').first(),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'demo_c3', level: 1 })).toBeVisible();
+  await expect(page.locator('#chat')).toHaveCount(0);
+  await expect(page.locator('.chat-header-link')).toHaveCount(0);
+  expect((await page.request.get('/api/messages')).status()).toBe(403);
 });
 
 test('T-023 Part D: Shift+Enter sends a message, Enter starts a new line, and an empty box sends nothing', async ({
