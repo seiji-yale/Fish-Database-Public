@@ -3,6 +3,7 @@ import { GuestEntryPage, JoinPage } from './pages/AccountPages';
 import { LineDetailPage } from './pages/LineDetailPage';
 import { LinesPage } from './pages/LinesPage';
 import { NewLinePage } from './pages/NewLinePage';
+import { RequireCapability } from './pages/NotAvailablePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PrintPage } from './pages/PrintPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -13,10 +14,30 @@ function page(path: string) {
   if (path === '/dev/styleguide') return <StyleGuide />;
   if (path === '/') return <DashboardPage />;
   if (path === '/lines') return <LinesPage />;
-  if (path === '/lines/new') return <NewLinePage />;
+  if (path === '/lines/new')
+    return (
+      <RequireCapability capability="lines.write">
+        <NewLinePage />
+      </RequireCapability>
+    );
+  // The Feeding Schedule page arrives with T-034; until then the route is closed to roles without it.
+  if (path === '/feeding')
+    return (
+      <RequireCapability capability="feeding.read">
+        <section className="page-placeholder">
+          <h1>{strings.feedingSchedule}</h1>
+          <p>{strings.placeholder}</p>
+        </section>
+      </RequireCapability>
+    );
   if (path === '/settings') return <SettingsPage />;
   const printMatch = /^\/lines\/([^/]+)\/print$/.exec(path);
-  if (printMatch !== null) return <PrintPage id={decodeURIComponent(printMatch[1] ?? '')} />;
+  if (printMatch !== null)
+    return (
+      <RequireCapability capability="lines.read_full">
+        <PrintPage id={decodeURIComponent(printMatch[1] ?? '')} />
+      </RequireCapability>
+    );
   // `/lines/new` is not a line id; everything else under `/lines/` is.
   const detailMatch = /^\/lines\/([^/]+)$/.exec(path);
   if (detailMatch !== null && detailMatch[1] !== 'new')

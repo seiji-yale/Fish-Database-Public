@@ -5,14 +5,14 @@ import { softDeleteCryoRecord } from './db/queries/cryoRecords';
 import { softDeleteLinePhenotype } from './db/queries/linePhenotypes';
 import { softDeleteLineReference } from './db/queries/lineReferences';
 import { createMigratedDb } from './db/testing/testDb';
-import { guestFetch } from './testBrowser';
+import { signedInFetch } from './testBrowser';
 import type { Bindings } from './middleware/session';
 
 async function setup() {
   const db = createMigratedDb();
   await loadFixture(db, fixture);
   const bindings = { DB: db, SESSION_SIGNING_KEY: 'test-signing-key' } satisfies Bindings;
-  const get = await guestFetch(bindings);
+  const get = await signedInFetch(bindings);
   return { get, db };
 }
 

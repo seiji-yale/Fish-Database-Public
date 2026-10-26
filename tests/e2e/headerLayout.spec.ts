@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { capabilitiesOf } from '../../domain/permissions';
 
 const LONG_NAME = 'Zebrafish Line and Cryopreservation Database of the Developmental Genetics Lab';
 
@@ -9,7 +10,12 @@ async function useLongAppName(page: Page) {
     const session = (await response.json()) as { appName?: string; user: { role: string } };
     await route.fulfill({
       response,
-      json: { ...session, appName: LONG_NAME, user: { ...session.user, role: 'admin' } },
+      json: {
+        ...session,
+        appName: LONG_NAME,
+        user: { ...session.user, role: 'admin' },
+        capabilities: capabilitiesOf('admin'),
+      },
     });
   });
 }

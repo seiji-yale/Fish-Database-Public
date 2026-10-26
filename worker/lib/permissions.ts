@@ -19,3 +19,11 @@ export async function requireCapability(
   if (capability === 'admin.*') throw new ApiError(403, 'ADMIN_ONLY', messages.adminOnly);
   throw new ApiError(403, 'FORBIDDEN', messages.restrictedApi);
 }
+
+/** The signed-in role when it may only see the line overview (docs/08 §4); a full reader gets `null`. */
+export async function restrictedViewer(
+  c: Context<{ Bindings: Bindings }>,
+): Promise<ActingUser | null> {
+  const acting = await actingUser(c);
+  return can(acting.role, 'lines.read_full') ? null : acting;
+}

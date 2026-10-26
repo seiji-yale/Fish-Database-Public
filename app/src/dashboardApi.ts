@@ -17,6 +17,7 @@ export interface DashboardActivityPage {
 }
 
 export interface DashboardResponse {
+  restricted?: undefined;
   today: string;
   thresholdMonths: number;
   counters: {
@@ -63,7 +64,15 @@ export interface DashboardResponse {
   recentActivity: DashboardActivityPage;
 }
 
-export const getDashboard = () => request<DashboardResponse>('/api/dashboard');
+/** What Guests and Feeders get (FR-GUEST-09): the three line counters and nothing else. */
+export interface RestrictedDashboardResponse {
+  today: string;
+  restricted: true;
+  counters: { active: number; closed: number; cryopreserved: number };
+}
+
+export const getDashboard = () =>
+  request<DashboardResponse | RestrictedDashboardResponse>('/api/dashboard');
 
 export const markAllChatRead = () =>
   request<{ marked: number }>('/api/messages/read-all', { method: 'POST' });

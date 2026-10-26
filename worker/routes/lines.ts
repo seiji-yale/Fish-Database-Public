@@ -29,6 +29,8 @@ import { validateNewLine } from '../../domain/newLine';
 import { requireAuthor } from '../lib/attribution';
 import { ApiError } from '../lib/errors';
 import { protocolDefaultsFrom } from '../lib/protocolWrite';
+import { requireCapability, restrictedViewer } from '../lib/permissions';
+import { toLineListOverview } from '../../domain/lineOverview';
 import { createLine } from '../lib/lineCreate';
 import { messages } from '../lib/messages';
 import type { Db } from '../db/db';
@@ -112,16 +114,37 @@ export function filterAndSort(
   return sortLineList(filtered, input.sort, input.dir);
 }
 
+/** Restricted roles cannot order by columns they do not receive (FR-GUEST-05). */
+const HIDDEN_SORT_KEYS: readonly string[] = ['isCryopreserved', 'lastUpdateAt', 'notes'];
+function restrictedSort<T extends string>(sort: T | undefined): T | undefined {
+  return sort !== undefined && HIDDEN_SORT_KEYS.includes(sort) ? undefined : sort;
+}
+
 export const linesRoutes = new Hono<{ Bindings: Bindings }>();
 
 linesRoutes.get('/lines', async (c) => {
   const input = parseQuery(c.req.query());
+  const restricted = (await restrictedViewer(c)) !== null;
   const items = await loadLineListItems(c.env.DB, input.view);
+  if (restricted) {
+    // FR-GUEST-03/06: only the ID Method filter, and search never reads notes or cryo state.
+    const rows = filterAndSort(
+      items.map((item) => ({ ...item, notes: null })),
+      { ...input, cryo: undefined, breedSoon: undefined, sort: restrictedSort(input.sort) },
+    );
+    return c.json({
+      restricted: true,
+      view: input.view,
+      total: rows.length,
+      items: rows.map(toLineListOverview),
+    });
+  }
   const rows = filterAndSort(items, input);
   return c.json({ view: input.view, total: rows.length, items: rows });
 });
 
 linesRoutes.get('/lines.csv', async (c) => {
+  await requireCapability(c, 'lines.export');
   const input = parseQuery(c.req.query());
   const [items, users] = await Promise.all([
     loadLineListItems(c.env.DB, input.view),
@@ -141,6 +164,7 @@ linesRoutes.get('/lines.csv', async (c) => {
  * free. Registered before `/lines/:id` (lineDetail routes) so `check-name` is never read as an id.
  */
 linesRoutes.get('/lines/check-name', async (c) => {
+  await requireCapability(c, 'lines.write');
   const name = (c.req.query('name') ?? '').trim();
   if (name === '') return c.json({ available: true });
   const existing = await getLineByName(c.env.DB, name);

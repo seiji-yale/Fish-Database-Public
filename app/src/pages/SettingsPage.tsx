@@ -13,6 +13,7 @@ import { UsersSection } from '../components/settings/UsersSection';
 import { EmptyState, Skeleton, Toast } from '../components/shared';
 import { strings } from '../strings';
 import { useActingUser } from '../useActingUser';
+import { NotAvailablePage } from './NotAvailablePage';
 import { useAdminWrite } from '../useAdminWrite';
 
 const TABS = [
@@ -31,6 +32,7 @@ function initialTab(): TabId {
 
 export function SettingsPage() {
   const acting = useActingUser();
+  const isAdmin = acting.can('admin.*');
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [failed, setFailed] = useState(false);
   const [tab, setTab] = useState<TabId>(initialTab);
@@ -48,11 +50,12 @@ export function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    if (acting.role === 'admin') reload();
-  }, [acting.role, reload]);
+    if (isAdmin) reload();
+  }, [isAdmin, reload]);
 
   if (acting.name === null) return <Skeleton lines={4} />;
-  if (acting.role !== 'admin') {
+  if (!acting.can('lines.read_full')) return <NotAvailablePage />;
+  if (!isAdmin) {
     return (
       <section className="settings-page">
         <h1>{strings.settingsTitle}</h1>

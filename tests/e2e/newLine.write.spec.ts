@@ -125,15 +125,14 @@ test('phenotype chips are keyboard accessible: Enter adds, Backspace removes, Re
   await expect(page).toHaveURL(/\/lines\/new$/);
 });
 
-test('a Guest is told they cannot change line data', async ({ page }, testInfo) => {
+test('a Guest cannot open the New Line page (T-032)', async ({ page }) => {
   await actAs(page, 'Guest');
   await page.goto('/lines/new');
-  await fillPcrLine(page, unique(testInfo, 'guest'));
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(
-    page.getByRole('alert').filter({ hasText: 'Guests can read but cannot change anything' }),
+    page.getByRole('heading', { name: 'Not available in the Guest view' }),
   ).toBeVisible();
-  await expect(page).toHaveURL(/\/lines\/new$/);
+  await expect(page.getByLabel('Line name')).toHaveCount(0);
+  await actAs(page, 'Bob');
 });
 
 test('Save and add another creates two lines in a row, keeping the ID method and attribute names', async ({

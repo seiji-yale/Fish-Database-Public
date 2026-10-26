@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import type { Capability } from '../../domain/permissions';
-import { getSession, getUsers, type SessionUser } from './session';
+import { getSession, getUsers, type SessionState, type SessionUser } from './session';
 
 export const ACTING_USER_CHANGED = 'acting-user-changed';
 /** Settings adds, renames or removes a person: every user list re-reads. */
@@ -24,14 +24,29 @@ export interface ActingUserState {
 
 export type ActingUser = ActingUserState & { can: (capability: Capability) => boolean };
 
+const NOBODY: ActingUserState = {
+  role: 'guest',
+  users: [],
+  name: null,
+  id: null,
+  capabilities: [],
+};
+/** The last session read, so a page that mounts after the shell starts with the right capabilities. */
+let known: ActingUserState = NOBODY;
+
+/** `AppShell` calls this with each session it reads, before it renders the page. */
+export function rememberSession(session: SessionState): void {
+  known = {
+    role: session.user?.role ?? 'guest',
+    users: known.users,
+    name: session.user?.name ?? 'Guest',
+    id: session.user?.id ?? null,
+    capabilities: session.capabilities,
+  };
+}
+
 export function useActingUser(): ActingUser {
-  const [state, setState] = useState<ActingUserState>({
-    role: 'guest',
-    users: [],
-    name: null,
-    id: null,
-    capabilities: [],
-  });
+  const [state, setState] = useState<ActingUserState>(known);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,13 +54,14 @@ export function useActingUser(): ActingUser {
       void Promise.all([getSession(), getUsers().catch(() => [] as SessionUser[])])
         .then(([session, users]) => {
           if (cancelled) return;
-          setState({
+          known = {
             role: session.user?.role ?? 'guest',
             users,
             name: session.user?.name ?? 'Guest',
             id: session.user?.id ?? null,
             capabilities: session.capabilities,
-          });
+          };
+          setState(known);
         })
         .catch(() => undefined);
     }

@@ -12,7 +12,7 @@ import {
   USER_ID,
 } from './db/testing/builders';
 import { buildDashboardLists } from './lib/dashboard';
-import { guestFetch } from './testBrowser';
+import { signedInFetch } from './testBrowser';
 import type { Bindings } from './middleware/session';
 
 function makeLinesForAcceptance(): LineRow[] {
@@ -48,8 +48,8 @@ async function setup() {
   const db = createMigratedDb();
   await loadFixture(db, fixture);
   const bindings = { DB: db, SESSION_SIGNING_KEY: 'test-signing-key' } satisfies Bindings;
-  const get = await guestFetch(bindings);
-  return { db, get };
+  const get = await signedInFetch(bindings);
+  return { db, get, bindings };
 }
 
 describe('Dashboard assembly (T-010, BR-3)', () => {
@@ -308,7 +308,8 @@ describe('Dashboard API (T-010, FR-DASH-02…05)', () => {
   });
 
   it('counts unread messages per acting user and ignores already-read, own, and removed messages', async () => {
-    const { db, get } = await setup();
+    const { db, bindings } = await setup();
+    const get = await signedInFetch(bindings, 'Alice');
     await insertRaw(
       db,
       'chat_messages',
@@ -317,7 +318,7 @@ describe('Dashboard API (T-010, FR-DASH-02…05)', () => {
     await insertRaw(db, 'chat_mentions', {
       id: 'mention-unread-1',
       message_id: 'unread-1',
-      user_id: USER_ID.guest,
+      user_id: USER_ID.alice,
       created_at: '2026-09-29T00:00:00Z',
       deleted_at: null,
     });
@@ -329,14 +330,14 @@ describe('Dashboard API (T-010, FR-DASH-02…05)', () => {
     await insertRaw(db, 'chat_mentions', {
       id: 'mention-read-1',
       message_id: 'read-1',
-      user_id: USER_ID.guest,
+      user_id: USER_ID.alice,
       created_at: '2026-09-29T00:00:00Z',
       deleted_at: null,
     });
     await insertRaw(
       db,
       'chat_messages',
-      makeChatMessage({ id: 'own-1', line_id: 'fx-demo_c3', user_id: USER_ID.guest }),
+      makeChatMessage({ id: 'own-1', line_id: 'fx-demo_c3', user_id: USER_ID.alice }),
     );
     await insertRaw(
       db,
@@ -348,7 +349,7 @@ describe('Dashboard API (T-010, FR-DASH-02…05)', () => {
         deleted_at: '2026-09-29T00:00:00Z',
       }),
     );
-    await markMessageRead(db, 'read-1', USER_ID.guest, '2026-09-29T00:00:00Z');
+    await markMessageRead(db, 'read-1', USER_ID.alice, '2026-09-29T00:00:00Z');
     const body = await (
       await get('/api/dashboard')
     ).json<{

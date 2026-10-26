@@ -1,9 +1,9 @@
 /** The signed-in person's menu in the header (ADR-0005): Settings (Admin only; the header's ⚙ link is
  * hidden on phones, so this is the way there), change password, copy the guest link, sign out. */
 import { useEffect, useRef, useState } from 'react';
-import { isRestricted } from '../../../domain/permissions';
 import { getGuestLink, guestUrl, signOut, SESSION_CHANGED, type SessionUser } from '../session';
 import { strings } from '../strings';
+import { useActingUser } from '../useActingUser';
 
 export function AccountMenu({
   user,
@@ -14,6 +14,7 @@ export function AccountMenu({
   onChangePassword: () => void;
   onMessage: (message: string) => void;
 }) {
+  const acting = useActingUser();
   const ref = useRef<HTMLDetailsElement>(null);
   const [busy, setBusy] = useState(false);
 
@@ -70,7 +71,7 @@ export function AccountMenu({
         {user.role === 'feeder' ? <span className="chip">{strings.roleFeeder}</span> : null}
       </summary>
       <ul className="account-menu__list">
-        {user.role === 'admin' ? (
+        {acting.can('admin.*') ? (
           <li>
             <a href="/settings">{strings.settings}</a>
           </li>
@@ -88,7 +89,7 @@ export function AccountMenu({
                 {strings.changePassword}
               </button>
             </li>
-            {isRestricted(user.role) ? null : (
+            {!acting.can('lines.read_full') ? null : (
               <li>
                 <button type="button" onClick={copyGuestLink}>
                   {strings.shareGuestLink}

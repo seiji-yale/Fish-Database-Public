@@ -13,6 +13,7 @@ import { getUserByName, getUserBySignInName, listUsers, publicUser } from '../db
 import type { UserRow } from '../db/types';
 import { checkPassword, findInvite, guestLinkToken, sameToken } from '../lib/accounts';
 import { actingUser } from '../lib/attribution';
+import { requireCapability } from '../lib/permissions';
 import { ApiError } from '../lib/errors';
 import { messages } from '../lib/messages';
 import { hashPassword, verifyPassword } from '../lib/passwords';
@@ -176,4 +177,7 @@ sessionRoutes.get('/guest-link', async (c) => {
   return c.json({ token: await guestLinkToken(c.env.DB) });
 });
 
-sessionRoutes.get('/users', async (c) => c.json((await listUsers(c.env.DB)).map(publicUser)));
+sessionRoutes.get('/users', async (c) => {
+  await requireCapability(c, 'users.list');
+  return c.json((await listUsers(c.env.DB)).map(publicUser));
+});
