@@ -341,6 +341,7 @@ export const strings = {
   generatedAt: 'Generated',
   // Change Activity (T-013)
   activityStartBreeding: 'Start Breeding',
+  activityCancelBreeding: 'Cancel Breeding',
   activityGenotyping: 'Update Genotyping Record',
   activityClose: 'Close This Line',
   activityReopen: 'Reopen This Line',
@@ -349,6 +350,7 @@ export const strings = {
   activityEditDetails: 'Edit Details',
   activityDisabledBreedingActive: 'This line is already breeding.',
   activityDisabledAlreadyClosed: 'This line is already closed.',
+  activityDisabledNotBreeding: 'Only a breeding line can be set back to Current.',
   activityDisabledNotClosed: 'Only a closed line can be reopened.',
   activityDisabledGuest: 'Guests cannot change line data. Sign in with your own account.',
   startBreedingTitle: (name: string) => `Start breeding: ${name}`,
@@ -372,6 +374,12 @@ export const strings = {
   sameGenerationPreview: (positive: number, total: number) =>
     `IDed number will become ${String(total)} (+${String(positive)}); generation and DOB stay the same.`,
   genotypingSave: 'Save record',
+  cancelBreedingTitle: (name: string) => `Cancel breeding: ${name}?`,
+  cancelBreedingBody: (name: string, crossDate: string | null) =>
+    crossDate === null
+      ? `${name} will move back to Current lines.`
+      : `${name} will move back to Current lines and the cross date ${crossDate} will be dropped. DOB, generation, IDed number and genotyping records stay as they are.`,
+  cancelBreedingConfirm: 'Cancel breeding',
   closeTitle: (name: string) => `Close ${name}?`,
   closeReason: 'Reason (optional)',
   closeReasonHint: 'For example: line lost, no longer needed.',
@@ -383,10 +391,12 @@ export const strings = {
   activityFailed: 'The change could not be saved. Check your connection and try again.',
   activityDone: (label: string, version: number) => `${label} (version ${String(version)}).`,
   activityDoneBreeding: 'Breeding started',
+  activityDoneBreedingCancelled: 'Breeding cancelled',
   activityDoneGenotyping: 'Genotyping record saved',
   activityDoneClosed: 'Line closed',
   activityDoneReopened: 'Line reopened',
   timelineBreedingStarted: 'Breeding started',
+  timelineBreedingCancelled: 'Breeding cancelled',
   timelineClosed: 'Line closed',
   timelineReopened: 'Line reopened',
   // ID protocols (T-014)

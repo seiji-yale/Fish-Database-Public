@@ -37,6 +37,12 @@ export function timelineEvents(
     if (version.changeType === 'breeding_started') {
       const date = textAfter(version, 'breeding_started_at') ?? day;
       events.push({ ...base, date, text: strings.timelineBreedingStarted });
+    } else if (
+      version.changeType === 'edited' &&
+      change(version, 'status')?.before === 'Breeding' &&
+      change(version, 'status')?.after === 'Current'
+    ) {
+      events.push({ ...base, date: day, text: strings.timelineBreedingCancelled });
     } else if (version.changeType === 'closed') {
       const date = textAfter(version, 'closed_at') ?? day;
       events.push({ ...base, date, text: strings.timelineClosed });

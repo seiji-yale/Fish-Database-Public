@@ -10,6 +10,7 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { checkUpload } from '../../../domain/attachments';
 import {
+  validateCancelBreeding,
   validateClose,
   validateGenotyping,
   validateReopen,
@@ -550,6 +551,43 @@ export function CloseLineDialog({ line, onClose, onDone }: DialogProps) {
         error={state.errors['reason']}
         onChange={setReason}
       />
+    </ActivityFrame>
+  );
+}
+
+export function CancelBreedingDialog({ line, onClose, onDone }: DialogProps) {
+  const [note, setNote] = useState('');
+  const state = useActivitySend(
+    (payload) => postActivity(line.id, 'cancel-breeding', payload),
+    strings.activityDoneBreedingCancelled,
+    onDone,
+  );
+  const payload = () => ({ expectedVersion: line.version, note });
+
+  function submit() {
+    const check = validateCancelBreeding(payload());
+    if (!check.ok) {
+      state.show(check.errors, 'cb-');
+      return;
+    }
+    state.setErrors({});
+    void state.send(payload(), 'cb-');
+  }
+
+  return (
+    <ActivityFrame
+      title={strings.cancelBreedingTitle(line.name)}
+      titleId="cancel-breeding-title"
+      submitLabel={strings.cancelBreedingConfirm}
+      state={state}
+      onClose={onClose}
+      onSubmit={() => {
+        submit();
+      }}
+      initialFocus="#cb-note"
+    >
+      <p>{strings.cancelBreedingBody(line.name, line.breedingStartedAt)}</p>
+      <NoteField id="cb-note" value={note} error={state.errors['note']} onChange={setNote} />
     </ActivityFrame>
   );
 }
