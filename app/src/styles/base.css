@@ -2633,3 +2633,23 @@ a.button--primary:hover {
   font-size: 0.9em;
   overflow-wrap: anywhere;
 }
+
+/* Each file is its own row, set off from the next, so a note clearly belongs to the file above it. */
+.file-list {
+  gap: 0;
+}
+.file-list li {
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+}
+.file-list li:first-child {
+  border-top: 0;
+}
+.file-list__note {
+  padding-left: var(--space-2);
+  margin-top: var(--space-1);
+  border-left: 3px solid var(--color-border);
+}
+.file-list li {
+  align-items: flex-start;
+}
