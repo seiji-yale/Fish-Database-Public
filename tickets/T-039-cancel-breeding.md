@@ -48,3 +48,10 @@ The only ways out today are closing and reopening the line, which writes mislead
 4. The line leaves Currently Breeding on the Dashboard.
 
 ## Review Log
+
+### Report — 2026-10-23 — implementer
+
+- Done: `cancelBreeding` in `domain/breeding.ts` (Breeding → Current, drops only `breedingStartedAt`); `validateCancelBreeding`; `POST /api/lines/:id/cancel-breeding` recorded as an `edited` version with the summary `Breeding cancelled (cross date YYYY-MM-DD).` (no migration, as decided); Change Activity item **Cancel Breeding** (disabled with a reason unless Breeding), dialog with an optional note, Activity timeline entry `Breeding cancelled`.
+- Decision: a line that started breeding from Closed returns to Current, not Closed (the previous status is not stored). The dialog says what is kept.
+- Checks: domain tests and coverage 100 %; API tests (success, DOB/generation/counts unchanged, refusals on Current/Closed, stale version, Guest); e2e `changeActivity.write.spec.ts` at 375 / 768 / 1280 px ✅.
+- Follow-up when T-040 is merged: its "Nothing to restore" text names Change Activity generally; mention Cancel Breeding explicitly.

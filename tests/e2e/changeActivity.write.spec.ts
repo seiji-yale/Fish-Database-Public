@@ -141,3 +141,40 @@ test('Dashboard deep links open the dialog directly and explain when they cannot
   await page.goto(`/lines/${id}?action=update-genotyping`);
   await expect(page.getByRole('dialog')).toContainText('Update genotyping record');
 });
+
+test('T-039: Cancel Breeding sets a Breeding line back to Current and is only offered while breeding', async ({
+  page,
+}, testInfo) => {
+  await actAs(page, 'Bob');
+  const name = unique(testInfo, 'cb');
+  const id = await createLine(page, name);
+  await page.goto(`/lines/${id}`);
+
+  // Not offered on a Current line: the item explains why.
+  await menu(page).click();
+  await expect(item(page, /^Cancel Breeding/)).toContainText('Only a breeding line');
+  await menu(page).click();
+
+  await choose(page, /^Start Breeding/);
+  await page.getByRole('dialog').getByRole('button', { name: 'Start' }).click();
+  await expect(toast(page, 'Breeding started (version 2)')).toBeVisible();
+  await expect(page.locator('.detail-title .status-badge')).toContainText('Breeding');
+
+  await choose(page, /^Cancel Breeding/);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText(`Cancel breeding: ${name}?`);
+  await expect(dialog).toContainText('cross date');
+  await dialog.getByLabel('Note (optional)').fill('Wrong line');
+  await dialog.getByRole('button', { name: 'Cancel breeding' }).click();
+  await expect(toast(page, 'Breeding cancelled (version 3)')).toBeVisible();
+  await expect(page.locator('.detail-title .status-badge')).toContainText('Current');
+  await expect(page.locator('#activity')).toContainText('Breeding cancelled');
+  await expect(page.locator('#history .history-item').first()).toContainText(
+    'Breeding cancelled (cross date',
+  );
+  await expect(page.locator('#history .history-item').first()).toContainText('Wrong line');
+
+  // The line can start breeding again.
+  await choose(page, /^Start Breeding/);
+  await expect(page.getByRole('dialog')).toContainText('Start breeding');
+});

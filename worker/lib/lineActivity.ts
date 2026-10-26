@@ -71,6 +71,21 @@ export function closeChange(before: LineDocument, today: string, reason: string 
   return { line: columnsOf(breeding.closeLine(lineDocOf(before), today, reason)) };
 }
 
+/** T-039: recorded as an `edited` version (the change_type CHECK has no value of its own). */
+export function cancelBreedingChange(before: LineDocument): LineWriteChange {
+  const crossDate = before.line.breeding_started_at;
+  const after = breeding.cancelBreeding(lineDocOf(before));
+  return {
+    line: columnsOf(after),
+    summaryContext: {
+      text:
+        crossDate === null
+          ? 'Breeding cancelled.'
+          : `Breeding cancelled (cross date ${crossDate}).`,
+    },
+  };
+}
+
 export function reopenChange(before: LineDocument): LineWriteChange {
   return { line: columnsOf(breeding.reopenLine(lineDocOf(before))) };
 }

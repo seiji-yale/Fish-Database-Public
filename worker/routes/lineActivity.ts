@@ -1,6 +1,6 @@
 /**
  * Change Activity endpoints (T-013, FR-ACT-02…08, BR-1, BR-2, BR-4):
- * `POST /api/lines/:id/start-breeding | genotyping | close | reopen`.
+ * `POST /api/lines/:id/start-breeding | cancel-breeding | genotyping | close | reopen`.
  * Every one goes through `withLineWrite` (one version, one activity, optimistic locking) and the
  * pure rules of `domain/breeding.ts`; a rule violation is a 409 (transition) or 400 (input) answer.
  */
@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import {
   validateClose,
   validateGenotyping,
+  validateCancelBreeding,
   validateReopen,
   validateStartBreeding,
   type ActivityValidation,
@@ -21,6 +22,7 @@ import {
   activityError,
   closeChange,
   genotypingChange,
+  cancelBreedingChange,
   reopenChange,
   startBreedingChange,
 } from '../lib/lineActivity';
@@ -83,6 +85,20 @@ lineActivityRoutes.post('/lines/:id/start-breeding', async (c) => {
     note: input.note,
     now,
     mutate: (before) => startBreedingChange(before, input.crossDate, today),
+  });
+});
+
+lineActivityRoutes.post('/lines/:id/cancel-breeding', async (c) => {
+  const { author, form } = await authorAndForm(c);
+  const input = valid(validateCancelBreeding(form));
+  const now = nowIso();
+  return write(c, {
+    expectedVersion: input.expectedVersion,
+    author,
+    changeType: 'edited',
+    note: input.note,
+    now,
+    mutate: cancelBreedingChange,
   });
 });
 
