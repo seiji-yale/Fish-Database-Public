@@ -141,3 +141,11 @@ a Feeder behaves as a Guest for line data and sees no Feeding Schedule yet (T-03
 
 - `npm run test:e2e`: 322 passed, 25 skipped, 1 failed (`chat.write.spec.ts` "T-023 Part D" on phone-375, Edit button not found).
 - The same failure (plus the known `newLine.write.spec.ts` AC1/AC2 flake) appears on unmodified `origin/main` in a full run, and the chat spec passes alone on both. It is a pre-existing load-dependent flake, not caused by T-031. To be handled separately (not in this ticket).
+
+### Migration 0013 rehearsal — 2026-10-25 — implementer (owner-approved run)
+
+- Temporary D1 `fish-rehearsal` loaded with a fresh export of production (44 lines, 5 users, 2 invites, 84 activities, 63 versions, 44 protocols), migrated to 0012, then `npm run db:migrate:rehearsal` applied 0013: ✅.
+- Result: user rows (id, role, name, password-hash length and prefix) identical before and after; row counts of users, lines, activities, line_versions, invites and id_protocols unchanged; `PRAGMA foreign_key_check` returns no rows; no `users_copy` leftover; indexes on `users` unchanged (`sqlite_autoindex_users_1`, `_2`); the CHECK now allows `'feeder'`.
+- Loading note: `wrangler d1 execute --file` with a raw production export fails (foreign-key cycle `lines` ↔ `id_protocols`; the import does not honour `defer_foreign_keys` across the file). The rehearsal therefore applied migrations 0001-0012, cleared the seed rows and loaded the data table by table, setting `lines.current_protocol_id` last. Production itself is unaffected: 0013 is one migration and runs with `PRAGMA defer_foreign_keys`.
+- Rehearsal database deleted afterwards. Pre-migration export for production is taken by `db:migrate:production`.
+- Owner feedback (preview): edit buttons stay visible for a Feeder and writes are refused (403). This is intended until T-032 hides them; acceptance criterion 2 is read as "writes are refused".
