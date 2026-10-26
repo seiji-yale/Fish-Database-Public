@@ -8,13 +8,13 @@ Migration numbers follow the repository: 0012 is taken (`0012_cryo_use_undo`), s
 | Ticket | Title                                                    | State | Depends on |
 | ------ | -------------------------------------------------------- | ----- | ---------- |
 | T-031  | Feeder role and capability model                         | Done  | —          |
-| T-032  | Restricted view for Guests and Feeders                   | Ready | T-031      |
+| T-032  | Restricted view for Guests and Feeders                   | Done  | T-031      |
 | T-033  | Feeding Schedule data and API                            | Draft | T-031      |
 | T-034  | Feeding Schedule page                                    | Draft | T-033      |
 | T-035  | Monthly summary export and Notes & links                 | Draft | T-034      |
 | T-036  | Google Sheet import tool and cut-over                    | Draft | T-033      |
 | T-037  | Schedule events, weekly repeat                           | Draft | T-034      |
-| T-038  | Sequence file uploads (.ab1 / .fasta / .seq)             | Draft | —          |
+| T-038  | Sequence file uploads (.ab1 / .fasta / .seq)             | Ready | —          |
 | T-039  | Undo Start Breeding (Breeding to Current)                | Done  | —          |
 | T-040  | Restore Version dialog: Restore button cannot be pressed | Done  | —          |
 
