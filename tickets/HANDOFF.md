@@ -1,4 +1,4 @@
-# Handoff — 2026-10-25
+# Handoff — 2026-10-26
 
 Read `AGENTS.md`, then this file, then `tickets/STATUS.md`. Replace this file when work stops for the day.
 
@@ -6,10 +6,15 @@ Read `AGENTS.md`, then this file, then `tickets/STATUS.md`. Replace this file wh
 
 PRs #3 to #6 are merged (merge commits) and deployed. Production runs `main` at a31f1ce with migration 0013 applied (version 27a52fba); the preview runs the same `main`. Migration 0013 was rehearsed on a production copy first (T-031 Review Log). Owner accepted T-031, T-039 and T-040 on the preview.
 
-`tickets/STATUS.md` marks T-031, T-039 and T-040 Done.
+`tickets/STATUS.md` marks T-031, T-039 and T-040 Done. The handoff PR #7 is merged; `main` is at 00ab58f. No branch or PR is open, and T-032 has not been started (still Draft in STATUS.md).
+
+## Release policy (agreed with the owner, 2026-10-26)
+
+Do not hold finished tickets on branches until Phase 5 ends. One ticket, one branch, one PR; merge to `main` after owner acceptance on the preview and a green `check`. Deploy production at natural boundaries: T-032 alone and early, T-038 alone, and the Feeding Schedule lane (T-033 to T-037) around T-034 and the T-036 cut-over, with a full rehearsal on a production copy before the cut-over. Merge unfinished user-visible work hidden (no link, role-gated) rather than keeping it on a branch. Deploy the shared preview from `main`, not from an integration branch.
 
 ## Next for the agent
 
+- Owner paused on 2026-10-26 right before T-032. Ask whether to start it; set it Ready in `tickets/STATUS.md` first.
 - T-032 (restricted view for Guests and Feeders: hide the edit buttons for them; extend `worker/writeRoutes.test.ts` as the route-coverage test). Today a Feeder still sees the edit buttons; writes are refused with 403. Then T-038 (.ab1 / .fasta / .seq uploads), then T-033 onward (`docs/08-feeding-schedule-and-guest-access.md` section 12). Migration numbers: 0013 is used; Feeding Schedule uses 0014.
 - Set a ticket Ready in `tickets/STATUS.md` before starting it; one ticket, one branch, one PR.
 
