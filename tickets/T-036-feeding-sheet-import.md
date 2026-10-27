@@ -2,7 +2,7 @@
 
 |                  |                                                                                            |
 | ---------------- | ------------------------------------------------------------------------------------------ |
-| State            | Draft                                                                                      |
+| State            | Review                                                                                     |
 | Size             | M                                                                                          |
 | Phase            | 5 (Feeding Schedule & restricted view)                                                     |
 | Depends on       | T-033 (data + API); production run also needs T-034 merged (to verify in the UI)           |
@@ -24,7 +24,7 @@ that moves production from the sheet to the app with only the three current Feed
   `import_feeding.py` CLI per spec §7.3; `conftest.py` synthetic workbook (12 tabs shape, orphan cell,
   unknown name, leftover on a real date, formulas with cached values).
 - Flags: `--months`, `--env`, `--actor` (default: first active Admin by name), `--create-missing-users`
-  (inactive `feeder` users, **refused when `--env production`**), `--apply`, `--yes`.
+  (provisional users: inactive `feeder` users without a password; **allowed on production since the owner's decision of 2026-10-27**, with the typed confirmation), `--alias`, `--exclude`, `--apply`, `--yes`.
 - Idempotency: re-run replaces earlier imported rows for the same dates; app-edited days are never overwritten (listed).
 - `npm run import:feeding -- …` script alias; `tools/requirements-dev.txt` unchanged (openpyxl present).
 - Docs: `05-import-spec.md` new §8 "Feeding Schedule sheet" (from spec §7.1 – §7.3); `06-operations.md`
@@ -88,8 +88,23 @@ that moves production from the sheet to the app with only the three current Feed
 1. The dry-run report for October–December 2026 lists every assignment per day, 0 unknown names, and the orphan cells before the 1st as skipped.
 2. After apply, the production calendar for October 2026 matches the sheet cell by cell; Feeder One, Feeder Two and Feeder Three are the only new users.
 3. Re-running the apply makes no change (idempotent); a day edited in the app beforehand is listed as kept.
-4. The tool refuses `--create-missing-users` on production.
+4. (Changed 2026-10-27) `--create-missing-users` also works on production: the people the sheet names become provisional users (inactive Feeders without a password), marked in Settings > Users for an Admin to reactivate or leave inactive.
 
 ## Review Log
 
 <!-- Append Step Reports, Step Reviews, Ticket Review, Owner feedback here, newest at the bottom. -->
+
+### Owner decisions of 2026-10-27
+
+- The sheet now has **all twelve 2026 tabs visible** (`May2026` to `April2026`, all year 2026); the owner asked for the latest version to be reflected, so the import covers every month tab, not only October to December. The file is downloaded outside the repository (private data) and never committed.
+- Names in the sheet that are not users are registered as **provisional users** (also on production); an Admin later decides to reactivate or leave them inactive. The Settings > Users page marks them `Provisional` and shows a notice with their number (derived: inactive, no password, named by an import; no migration).
+
+### Steps 1 to 3 — 2026-10-27 — implementer
+
+- Step 1: `feeding_reader.py` reads the month from the tab name, checks `C5:I5`, `D4`, the day numbers 1..N in order and the weekday of the 1st, finds the week blocks by scanning rows (not a fixed list), reports orphans and counts events; a file without cached formula values says to download it again. It works on hidden and visible tabs alike and never writes (a hash test). 13 reader tests, with a synthetic workbook (`conftest.py`).
+- Step 2: `feeding_mapper.py` (case- and space-insensitive names, aliases, provisional users once per name, insert / replace an earlier import / leave unchanged / keep a day edited in the app, `--exclude` ranges, imported days whose cell is now empty are reported, never deleted), `feeding_sql.py` (one file; `UPDATE ... replaced_at/by` and `INSERT`; a provisional user is an inactive `feeder` without a password plus a `user_added` activity; no `DELETE`), `feeding_report.py`, and the CLI. Tests run the SQL on a SQLite database built from the migrations, the CLI with the database calls replaced by it, and cover: unknown names stop an apply, the second run changes nothing, an app-edited day is kept, production always asks for its name to be typed even with `--yes`, and the actor default.
+- Settings > Users: `provisional` in the admin overview (worker test, Playwright test with a mocked overview).
+- Step 3 (preview): dry run, then apply on the **preview** database with the real sheet (all 12 months; the first-week leftovers of November and December excluded as the report suggested): 297 days written, 6 provisional users, 3 days edited earlier in the app kept; a second run: 0 to write, 297 unchanged. Counts per person and month are in the owner's copy of the report (kept outside the repository: it names people).
+- What the real sheet looks like: 12 tabs, 310 name cells with a day number, 6 orphans (names above days of the neighbouring months), 59 event cells (not imported), 10 distinct first names. In `November2026` and `December2026` only the first week is filled (`E7:I7` and `E7:I7`: five days each, the template leftovers); the report flags both. `January2026`, `March2026`, `April2026` have a text instead of a number in the sheet's month selector cell: irrelevant to the reader, which uses the tab name.
+- Step 4 (production) waits for the owner: the runbook is in `docs/06-operations.md` section 5; production is written only after the owner reads the production dry-run report and confirms.
+- Deviation: `--create-missing-users` is allowed on production (owner decision above); the module names are prefixed `feeding_` because `tools/import` already has a `reader.py` and a `report.py`.

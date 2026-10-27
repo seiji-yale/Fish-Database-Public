@@ -621,6 +621,12 @@ export const strings = {
   userAdd: 'Add user and create invite',
   userActive: 'Active',
   userInactive: 'Removed',
+  userProvisional: 'Provisional',
+  userProvisionalNotice: (count: number) =>
+    `${String(count)} ${count === 1 ? 'person' : 'people'} from the Feeding Schedule sheet ${count === 1 ? 'is' : 'are'} waiting for your decision.`,
+  userProvisionalHint:
+    'Reactivate each person who feeds from now on (then send an invite). Leave the others as they are: their past days keep the name.',
+  userProvisionalShow: 'Show them',
   userBuiltin: 'Built-in',
   userActionsFor: (name: string) => `Actions for ${name}`,
   userRename: 'Rename',

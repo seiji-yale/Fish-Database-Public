@@ -112,22 +112,28 @@ async function activity(
 
 adminRoutes.get('/admin/overview', async (c) => {
   const db = c.env.DB;
-  const [users, settings, importReport, mirrorOk, mirrorError, mirrorInfo] = await Promise.all([
-    listUsers(db, { includeInactive: true }),
-    Promise.all(
-      [
-        'upcoming_breeding_months',
-        'default_annealing_c',
-        'default_cycles',
-        'app_name',
-        'feeding_schedule_notes',
-      ].map((key) => getSetting(db, key)),
-    ),
-    getSetting(db, 'import_report_md'),
-    getSetting(db, 'mirror_last_ok_at'),
-    getSetting(db, 'mirror_last_error'),
-    mirrorOverview(c.env),
-  ]);
+  const [users, settings, importReport, mirrorOk, mirrorError, mirrorInfo, importedFeeders] =
+    await Promise.all([
+      listUsers(db, { includeInactive: true }),
+      Promise.all(
+        [
+          'upcoming_breeding_months',
+          'default_annealing_c',
+          'default_cycles',
+          'app_name',
+          'feeding_schedule_notes',
+        ].map((key) => getSetting(db, key)),
+      ),
+      getSetting(db, 'import_report_md'),
+      getSetting(db, 'mirror_last_ok_at'),
+      getSetting(db, 'mirror_last_error'),
+      mirrorOverview(c.env),
+      // People the Feeding Schedule sheet import named (T-036): provisional until an Admin decides.
+      db
+        .prepare('SELECT DISTINCT user_id FROM feeding_assignments WHERE imported_from IS NOT NULL')
+        .all<{ user_id: string }>(),
+    ]);
+  const importedFeederIds = new Set(importedFeeders.results.map((row) => row.user_id));
   const lists = await Promise.all(
     ENUMERATION_KINDS.map(async (kind) => ({
       kind,
@@ -149,6 +155,12 @@ adminRoutes.get('/admin/overview', async (c) => {
       // Waiting for the first sign-in through an invite, or never invited (ADR-0005).
       invitePending: user.must_change_password === 1,
       canSignIn: user.password_hash !== null,
+      // Created by the sheet import and still inactive without a password: waiting for an Admin's decision.
+      provisional:
+        user.is_active === 0 &&
+        user.is_builtin === 0 &&
+        user.password_hash === null &&
+        importedFeederIds.has(user.id),
     })),
     lists,
     settings: {

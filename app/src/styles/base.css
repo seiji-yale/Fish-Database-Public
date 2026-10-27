@@ -3014,6 +3014,17 @@ div.feeding-cell {
   }
 }
 
+/* Settings > Users: people the Feeding Schedule import is waiting for a decision on (T-036). */
+.settings-notice {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-left: 4px solid #7a4400;
+  background: #fff6e8;
+}
+.settings-notice p {
+  margin: 0 0 var(--space-2);
+}
+
 /* Schedule events in the Day dialog (T-037). */
 .feeding-events h3 {
   margin: 0 0 var(--space-2);

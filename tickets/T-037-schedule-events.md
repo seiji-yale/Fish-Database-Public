@@ -2,7 +2,7 @@
 
 |                  |                                                                                           |
 | ---------------- | ----------------------------------------------------------------------------------------- |
-| State            | Review                                                                                    |
+| State            | Done                                                                                      |
 | Size             | M                                                                                         |
 | Phase            | 5 (Feeding Schedule & restricted view)                                                    |
 | Depends on       | T-034 (the events API, including repeat and scope, exists since T-033)                    |
