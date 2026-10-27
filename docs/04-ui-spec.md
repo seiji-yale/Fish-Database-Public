@@ -86,6 +86,14 @@ the fourth button of the Dashboard navigation row and the first item of the acco
   assigned day asks for confirmation. If someone else changed the day meanwhile the save is refused with
   "This day was changed by … at …" and a `Reload this day` button; the dialog then shows the new value.
   A save updates the cell and the month totals at once and shows a toast. Focus returns to the day.
+- **Events (T-037).** Below the feeder and note, the dialog lists the day's schedule events (title, `Repeats weekly`
+  for a series, note) with `Edit` and `Remove`, and `+ Add event`. The form has `Title` (suggestions from the titles
+  of this and the previous month), `Event note` and `Repeat weekly`; with it, `Repeat until` (default: the last day
+  of the month on screen) and a live line `Will add N events, every Monday until YYYY-MM-DD.` that counts exactly
+  the rows that will be created. Editing a repeating event offers `This event only` / `This and all following (N)`
+  (default: this event only). `Remove` asks once; for a repeating event with later occurrences it offers
+  `Delete this event` and `Delete this and all following (N)`. These actions are saved at once, not with the
+  dialog's Save, and the month reloads. A one-off event has no scope choice. No notification is sent.
 - **Totals and Notes & links.** The panel lists, for each person, days with weekday and weekend counts, and the
   unassigned days; the numbers come from the same function as the server (BR-16). Notes & links shows the
   setting `feeding_schedule_notes` with web addresses as links; it is edited in Settings (T-035).
