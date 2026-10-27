@@ -174,9 +174,8 @@ test('Repeat this week fills the empty days after the week and keeps the assigne
   else {
     await page
       .locator('.feeding-grid tbody tr', { has: page.locator(`[data-date="${at(1)}"]`) })
-      .locator('.row-menu summary')
+      .getByRole('button', { name: /Repeat this week/ })
       .click();
-    await page.getByRole('button', { name: 'Repeat this week…' }).click();
   }
   const dialog = page.getByRole('dialog');
   const preview = dialog.getByTestId('feeding-repeat-preview');

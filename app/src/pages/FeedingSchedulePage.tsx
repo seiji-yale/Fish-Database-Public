@@ -125,7 +125,7 @@ export function FeedingSchedulePage() {
         >
           {strings.feedingPrevious}
         </button>
-        <h2 className="feeding-nav__month" aria-live="polite">
+        <h2 className="sr-only feeding-nav__month" aria-live="polite">
           {monthLabel(url.month)}
         </h2>
         <input

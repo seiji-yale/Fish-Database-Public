@@ -115,3 +115,14 @@ two taps by Feeders, Members and Admins, with month totals, history per day and 
 - Deviations: (1) the cell and totals are updated from the server's answer to the save (a few milliseconds) rather than before it, so a refused save never flickers; (2) the event labels show in the cell, but the events section of the dialog arrives with T-037; (3) `Export` and the print view arrive with T-035, so the page head has only `Today`; (4) a person who is no longer active but still holds the day appears in the select as `Name (not active)` so the day does not look empty; saving that person again is refused by the server (BR-14).
 - Checks: `npm run check`, `check:public` green; the whole browser suite (`playwright test`) green on the final build.
 - For the owner (preview, phone and laptop): acceptance 1 to 6 of this ticket.
+
+### Owner feedback on the first preview — 2026-10-26
+
+Acceptance went as expected; four changes were asked for and made:
+
+1. **Navigation:** a Feeding Schedule link in the header (top navigation, and the phone tab bar) for roles with `feeding.read`. On tablets the header link gap is a little smaller so the long-app-name layout still fits.
+2. **Upright screens:** the totals (and Notes & links) sit under the calendar unless the window is at least 1024 px wide **and** landscape, so the calendar keeps the whole width.
+3. **Repeat this week:** the week row's `⋯` menu is now a circular-arrow icon button (name and tooltip `Repeat this week… (Week of …)`); the List view keeps its text button.
+4. **Month box:** the visible `Month Year` heading next to the month box is gone (it stays for screen readers); the box itself names the month. On a phone Previous, the box and Next share one row.
+
+E2E added: the header link at each width, one month box, totals under the calendar when upright (a 1024 x 1366 window) and beside it when landscape. Full browser suite green (388 tests).

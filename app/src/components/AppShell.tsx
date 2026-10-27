@@ -21,6 +21,7 @@ const navigation: { href: string; label: string; capability?: Capability }[] = [
   { href: '/', label: strings.dashboard },
   { href: '/lines', label: strings.lines },
   { href: '/lines/new', label: strings.newLine, capability: 'lines.write' },
+  { href: '/feeding', label: strings.feedingSchedule, capability: 'feeding.read' },
   // The phone tab opens Lines with its search box focused (there is no separate search page).
   { href: '/lines#search', label: strings.search },
 ];

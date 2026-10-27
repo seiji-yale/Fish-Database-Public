@@ -7,7 +7,7 @@ import { monthGrid, weekdayName } from '../../../domain/feeding';
 import type { FeedingDay, FeedingMonth } from '../feedingApi';
 import { isUnassignedSoon, weekStartOf, type FeedingViewMode } from '../feedingView';
 import { strings } from '../strings';
-import { RowMenu } from './RowMenu';
+import { IconButton } from './Icons';
 
 const COLUMN_HEADS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -143,16 +143,12 @@ export function FeedingCalendar({
               })}
               {canWrite ? (
                 <td className="feeding-grid__actions">
-                  <RowMenu
-                    label={`${strings.feedingWeekActions}: ${strings.feedingWeekOf(weekStarts[weekIndex] ?? '')}`}
-                    items={[
-                      {
-                        label: strings.feedingRepeatWeek,
-                        onSelect: () => {
-                          onRepeatWeek(weekStarts[weekIndex] ?? '');
-                        },
-                      },
-                    ]}
+                  <IconButton
+                    icon="repeat"
+                    label={`${strings.feedingRepeatWeek} (${strings.feedingWeekOf(weekStarts[weekIndex] ?? '')})`}
+                    onClick={() => {
+                      onRepeatWeek(weekStarts[weekIndex] ?? '');
+                    }}
                   />
                 </td>
               ) : null}

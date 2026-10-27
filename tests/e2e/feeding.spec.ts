@@ -115,3 +115,33 @@ test.describe('the Guest view', () => {
     await expect(page.getByRole('link', { name: 'Feeding Schedule' })).toHaveCount(0);
   });
 });
+
+test('the header offers the Feeding Schedule, and the month shows once', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/');
+  const entry = testInfo.project.name.startsWith('phone')
+    ? page.locator('.bottom-tabs').getByRole('link', { name: 'Feeding Schedule' })
+    : page.locator('.top-nav').getByRole('link', { name: 'Feeding Schedule' });
+  await entry.click();
+  await expect(page.getByRole('heading', { name: 'Feeding Schedule', level: 1 })).toBeVisible();
+  // One month box, no second "Month Year" next to it.
+  await expect(page.locator('.feeding-nav__picker')).toBeVisible();
+  await expect(page.locator('.feeding-nav h2')).toHaveClass(/sr-only/);
+});
+
+test('held upright the totals sit under the calendar; held wide they sit beside it', async ({
+  page,
+}) => {
+  await page.goto('/feeding?month=2026-10');
+  const grid = await page.locator('.feeding-grid').boundingBox();
+  const totals = await page.locator('.feeding-totals').boundingBox();
+  const width = page.viewportSize()?.width ?? 0;
+  if (width >= 1024)
+    expect(totals?.x ?? 0).toBeGreaterThan((grid?.x ?? 0) + (grid?.width ?? 0) - 1);
+  else expect(totals?.y ?? 0).toBeGreaterThan((grid?.y ?? 0) + (grid?.height ?? 0) - 1);
+  await page.setViewportSize({ width: 1024, height: 1366 });
+  const upright = await page.locator('.feeding-totals').boundingBox();
+  const calendar = await page.locator('.feeding-grid').boundingBox();
+  expect(upright?.y ?? 0).toBeGreaterThan((calendar?.y ?? 0) + (calendar?.height ?? 0) - 1);
+});
