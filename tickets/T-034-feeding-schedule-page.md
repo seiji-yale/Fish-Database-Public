@@ -2,7 +2,7 @@
 
 |                  |                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------ |
-| State            | Review                                                                               |
+| State            | Done                                                                                 |
 | Size             | L                                                                                    |
 | Phase            | 5 (Feeding Schedule & restricted view)                                               |
 | Depends on       | T-033 (and T-032 for the restricted shell; rebase on whichever merges second)        |
