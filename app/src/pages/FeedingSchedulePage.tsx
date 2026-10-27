@@ -40,6 +40,7 @@ export function FeedingSchedulePage() {
   const [repeatWeek, setRepeatWeek] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [earlierTitles, setEarlierTitles] = useState<string[]>([]);
   const dialogOpen = openDate !== null || repeatWeek !== null;
 
   /** Reads a month; the answer is applied only if it is still the month on screen. */
@@ -68,6 +69,22 @@ export function FeedingSchedulePage() {
       cancelled = true;
     };
   }, [url.month, reloadKey]);
+
+  // Event titles of the month before, for the title suggestions of the Day dialog.
+  useEffect(() => {
+    const before = shiftMonth(url.month, -1);
+    if (before === null) return;
+    let cancelled = false;
+    void getFeedingMonth(before)
+      .then((earlier) => {
+        if (!cancelled)
+          setEarlierTitles(earlier.days.flatMap((day) => day.events.map((event) => event.title)));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [url.month]);
 
   useEffect(() => {
     if (dialogOpen) return;
@@ -100,6 +117,12 @@ export function FeedingSchedulePage() {
   const today = data?.today ?? labToday();
   const previous = shiftMonth(url.month, -1);
   const next = shiftMonth(url.month, 1);
+  const knownTitles = [
+    ...new Set([
+      ...(shown?.days ?? []).flatMap((day) => day.events.map((event) => event.title)),
+      ...earlierTitles,
+    ]),
+  ].sort((a, b) => a.localeCompare(b));
   const openDay: FeedingDay | undefined = shown?.days.find((day) => day.date === openDate);
 
   return (
@@ -211,6 +234,12 @@ export function FeedingSchedulePage() {
           key={openDay.date}
           day={openDay}
           assignable={shown.assignable}
+          month={url.month}
+          titles={knownTitles}
+          onEventsChanged={(message) => {
+            setToast(message);
+            void fetchMonth(url.month);
+          }}
           canWrite={canWrite}
           onClose={() => {
             setOpenDate(null);

@@ -85,3 +85,24 @@ export const postRepeatWeek = (body: {
   overwrite: boolean;
   dryRun: boolean;
 }) => request<RepeatWeekCounts>('/api/feeding/repeat-week', json('POST', body));
+
+export interface NewEventBody {
+  date: string;
+  title: string;
+  note: string | null;
+  /** Present for a weekly repeat. */
+  repeatUntil?: string;
+  dryRun?: boolean;
+}
+
+/** `dryRun` only counts: `dates` are the days the event would be on. */
+export const postFeedingEvent = (body: NewEventBody) =>
+  request<{ count: number; dates: string[] }>('/api/feeding/events', json('POST', body));
+
+export const patchFeedingEvent = (
+  id: string,
+  body: { title: string; note: string | null; scope: 'this' | 'following' },
+) => request<{ updated: number }>(`/api/feeding/events/${id}`, json('PATCH', body));
+
+export const deleteFeedingEvent = (id: string, scope: 'this' | 'following') =>
+  request<{ deleted: number }>(`/api/feeding/events/${id}?scope=${scope}`, { method: 'DELETE' });

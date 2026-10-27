@@ -2,7 +2,7 @@
 
 |                  |                                                                                           |
 | ---------------- | ----------------------------------------------------------------------------------------- |
-| State            | Draft                                                                                     |
+| State            | Review                                                                                    |
 | Size             | M                                                                                         |
 | Phase            | 5 (Feeding Schedule & restricted view)                                                    |
 | Depends on       | T-034 (the events API, including repeat and scope, exists since T-033)                    |
@@ -81,3 +81,10 @@ No reminder is sent (OQ-44).
 ## Review Log
 
 <!-- Append Step Reports, Step Reviews, Ticket Review, Owner feedback here, newest at the bottom. -->
+
+### Steps 1 to 3 — 2026-10-27 — implementer
+
+- Step 1 and 2: the Events section of the Day dialog (`FeedingEvents.tsx`): list with `Edit` / `Remove`, `+ Add event` (Title with a `<datalist>` of the titles of the month on screen and the previous month, `Event note`), `Repeat weekly` with `Repeat until` (default: last day of the month on screen) and the live preview from `POST /api/feeding/events` with `dryRun: true` (the count equals the rows created; the Save button waits for a valid preview). Editing a repeating event with later occurrences shows `This event only` / `This and all following (N)` (default this). `Remove` goes through `FeedingEventRemoveDialog`: one confirmation for a one-off, two actions (`Delete this event`, `Delete this and all following (N)`) for a repeating event. Each action is its own request; the month reloads after it and the toast says what happened (a 404 means someone else removed it first: the day reloads with a note). The calendar cell shows event labels (wrapped, not cut off, from 640 px), a dot on the phone grid; the List view and the print view show the full title.
+- Step 3: `feedingEvents.write.spec.ts`: a one-off (add, edit, one confirmation), a weekly repeat across a month boundary (preview text equals the number of Mondays, each Monday carries it, the CSV and the print view show it on each day of the month), delete this one, edit this and all following, edit one only, delete this and all following (earlier ones stay), and the title suggestions. Full browser suite green (409 tests). The event label in `feeding.write.spec.ts` locators was disambiguated: the event field is `Event note`.
+- Deviations: (1) the edit scope is a pair of radio buttons inside the form instead of a separate question after Save; (2) `user-guide.md` does not exist in this repository (as in T-034); (3) the Day dialog's events section appears for every role with `feeding.read`, but Edit, Remove and `+ Add event` only for roles with `feeding.write` (all current roles that read can write).
+- For the owner: acceptance 1 to 4 of this ticket, on the preview.

@@ -3013,3 +3013,78 @@ div.feeding-cell {
     height: 0.72in;
   }
 }
+
+/* Schedule events in the Day dialog (T-037). */
+.feeding-events h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+}
+.feeding-events ul {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+.feeding-events__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.feeding-events__text {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.feeding-events__series {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+.feeding-events__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.feeding-events__actions button,
+.feeding-events > button,
+.feeding-event-form__actions button {
+  min-height: 44px;
+}
+.feeding-event-form {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.feeding-event-form input[type='text'],
+.feeding-event-form input[type='date'] {
+  width: 100%;
+  min-height: 44px;
+}
+.feeding-event-form__scope {
+  display: grid;
+  gap: var(--space-2);
+  border: 0;
+  padding: 0;
+}
+.feeding-event-form__scope label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+}
+.feeding-event-form__actions,
+.feeding-event-remove__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: var(--space-2);
+}
+@media (min-width: 640px) {
+  /* Event labels in a cell wrap instead of being cut off. */
+  .feeding-cell__event {
+    white-space: normal;
+  }
+}
