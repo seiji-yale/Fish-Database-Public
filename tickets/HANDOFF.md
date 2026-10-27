@@ -4,19 +4,26 @@ Read `AGENTS.md`, then this file, then `tickets/STATUS.md`. Replace this file wh
 
 ## State
 
-Work stopped on 2026-10-26 after the T-038 release. PRs #3 to #7 and #9 to #12 are merged. Production and the preview run `main` at c97f9e8 (T-032 and T-038 shipped, no migration); the only later commit on `main` is this docs PR (#12). Migration 0013 is the latest. T-031, T-032, T-038, T-039 and T-040 are Done. No PR or ticket branch is open, and nothing is in progress: T-033 has not been started (Draft in STATUS.md). The owner has not yet asked for the Feeding Schedule lane to begin.
+Work paused on 2026-10-27 after the first Feeding Schedule release. PRs #13 (T-033), #14 (T-034) and #15 (T-035) are merged. Production and the preview run `main` at 5dfea03 (production Worker version 4a82b9a7, migration 0014 applied after a dump; preview c5d2a1da). T-031 to T-035 and T-038 to T-040 are Done. The owner accepted T-034 and T-035 on the preview. No PR or ticket branch is open; T-036 and T-037 have not been started (Draft).
+
+The schedule is live but empty in production: nobody has entered days yet. People start using it, or T-036 imports the Google Sheet (the cut-over).
 
 ## Release policy (agreed with the owner, 2026-10-26)
 
-Do not hold finished tickets on branches until Phase 5 ends. One ticket, one branch, one PR; merge to `main` after owner acceptance on the preview and a green `check`. Deploy production at natural boundaries: T-032 and T-038 (both done, each alone), and the Feeding Schedule lane (T-033 to T-037) around T-034 and the T-036 cut-over, with a full rehearsal on a production copy before the cut-over. Merge unfinished user-visible work hidden (no link, role-gated) rather than keeping it on a branch. Deploy the shared preview from `main` or the ticket branch (the preview guard needs `origin/main` inside it), and redeploy it from `main` after the merge. The owner approves each preview and production deploy, and a merge only when they said so for that PR; ask again for each new deploy, an earlier approval does not carry over.
+Do not hold finished tickets on branches until Phase 5 ends. One ticket, one branch, one PR; merge to `main` after owner acceptance on the preview and a green `check`. Deploy production at natural boundaries: T-032 and T-038 (both done, each alone), and the Feeding Schedule lane (T-033 to T-037) around T-034 and the T-036 cut-over, with a full rehearsal on a production copy before the cut-over. Merge unfinished user-visible work hidden (no link, role-gated) rather than keeping it on a branch. Deploy the shared preview from `main` or the ticket branch (the preview guard needs `origin/main` inside it), and redeploy it from `main` after the merge. Preview deploys (`npm run deploy:preview`, with `db:migrate:preview`) need no approval (owner, 2026-10-27). Production deploys and production migrations need the owner's confirmation each time, and so does each PR merge.
 
 ## Next for the agent
 
-- The Feeding Schedule lane: T-033 first (data and API; migration 0014), then T-034 onward (`docs/08-feeding-schedule-and-guest-access.md` section 12). Set the ticket Ready in `tickets/STATUS.md` first; one ticket, one branch, one PR. Ask the owner before the first step.
-- T-032 left two hooks for the lane: `worker/routeCoverage.test.ts` needs a `feeding` row for every new route (an unclassified route fails the test), and `app/src/App.tsx` serves a placeholder at `/feeding` behind `feeding.read` until T-034 replaces it. T-034 also adds the account-menu `Feeding Schedule` entry for Feeders (FR-GUEST-02).
-- The next production deploy of the lane happens around T-034 and the T-036 cut-over, after a full rehearsal on a production copy (release policy below).
+- **T-037** (events UI in the Day dialog: add, edit, remove, weekly repeat with a dry-run preview; the API exists since T-033) can start any time.
+- **T-036** (Google Sheet import tool and cut-over) touches production data: before starting, agree with the owner on where the exported .xlsx is, the months (2026-10 to 2026-12), and how sheet names map to app users; the runbook is `docs/08-feeding-schedule-and-guest-access.md` section 7.
+- Set a ticket Ready in `tickets/STATUS.md` before starting it; one ticket, one branch, one PR.
 
 ## Notes and lessons
+
+- Lists ordered by `created_at` then `id` are not deterministic for rows made in the same second (ULID ids made in one millisecond order randomly): order by something meaningful (see `listAssignmentHistory`, `listEventsInRange`).
+- A stacked PR (T-035 on T-034) is merged in order; after the first merge, merge `origin/main` into the second branch locally (noreply identity) and wait for its CI again (about 5 to 12 minutes).
+- Recent Activity lists line events only, so a `settings_changed` entry is not shown on the Dashboard.
+- `npx playwright test <file>` still runs the whole suite on this machine (the web server step resets the database); it takes about a minute.
 
 - Agents can merge PRs only after the required check `check` passes on the PR head and the branch is up to date with `main`. Update a branch by merging `origin/main` locally with the noreply identity and pushing, not with GitHub's update-branch button (it would use the owner's account identity).
 - UI conventions from T-038: actions that look the same everywhere (upload, remove, copy, open, download, History) are icon buttons (`components/Icons.tsx`, an accessible name and a tooltip); removing a file asks first; a list of rows that carry a note sets each row off with a divider.
