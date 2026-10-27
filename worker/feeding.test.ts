@@ -533,3 +533,62 @@ describe('events (FR-FEED-20 … 22, BR-19)', () => {
     expect((await listAllEvents(t.db))[0]?.deleted_at).toBeNull();
   });
 });
+
+describe('GET /api/feeding/summary.csv (FR-FEED-17, FR-FEED-19)', () => {
+  it('is a UTF-8 file with a byte order mark: a day row per day, then the totals the page shows', async () => {
+    const t = await setup();
+    for (const [date, userId] of [
+      ['2026-10-01', t.ids.alice],
+      ['2026-10-02', t.ids.alice],
+      ['2026-10-03', t.ids.bob],
+    ] as const)
+      await t.put(date, {
+        userId,
+        note: date === '2026-10-02' ? 'cover, "late"' : null,
+        expectedAssignmentId: null,
+      });
+    await t.call('/api/feeding/events', { date: '2026-10-02', title: 'Inspection' });
+    await t.call('/api/feeding/events', { date: '2026-10-02', title: '=SUM(A1)' });
+    const response = await t.call('/api/feeding/summary.csv?month=2026-10');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('text/csv; charset=utf-8');
+    expect(response.headers.get('content-disposition')).toBe(
+      'attachment; filename="feeding-schedule_2026-10.csv"',
+    );
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+    const lines = new TextDecoder().decode(bytes).split('\r\n');
+    expect(lines[0]).toBe(
+      'Section,Date,Weekday,Feeder,Note,Events,Weekday days,Weekend days,Total days',
+    );
+    const days = lines.filter((line) => line.startsWith('day,'));
+    expect(days).toHaveLength(31);
+    expect(days[0]).toBe('day,2026-10-01,Thursday,Alice,,,,,');
+    expect(days[1]).toBe('day,2026-10-02,Friday,Alice,"cover, ""late""",\'=SUM(A1); Inspection,,,');
+    expect(days[2]).toBe('day,2026-10-03,Saturday,Bob,,,,,');
+    expect(days[3]).toBe('day,2026-10-04,Sunday,,,,,,');
+    expect(lines.filter((line) => line.startsWith('total,'))).toEqual([
+      'total,,,Alice,,,2,0,2',
+      'total,,,Bob,,,0,1,1',
+      'total,,,Unassigned,,,,,28',
+    ]);
+
+    // The page and the file are one calculation (BR-16).
+    const month = await t.month();
+    expect(month.totals.byUser.map((entry) => [entry.name, entry.total])).toEqual([
+      ['Alice', 2],
+      ['Bob', 1],
+    ]);
+    expect(month.totals.unassigned).toBe(28);
+  });
+
+  it('refuses a bad month with 400 and a Guest with 403', async () => {
+    const t = await setup();
+    expect((await t.call('/api/feeding/summary.csv?month=2026-13')).status).toBe(400);
+    expect((await t.call('/api/feeding/summary.csv')).status).toBe(400);
+    const guest = await setup('Guest');
+    expect((await guest.call('/api/feeding/summary.csv?month=2026-10')).status).toBe(403);
+    const feeder = await setup('Feeder One');
+    expect((await feeder.call('/api/feeding/summary.csv?month=2026-10')).status).toBe(200);
+  });
+});

@@ -93,6 +93,7 @@ const ROUTES: Record<string, RouteClass> = {
   'GET /api/messages/unread-count': 'full',
   'POST /api/messages/read-all': 'full',
   'GET /api/feeding': 'feeding',
+  'GET /api/feeding/summary.csv': 'feeding',
   'GET /api/feeding/days/:date/history': 'feeding',
   'PUT /api/feeding/days/:date': 'feeding',
   'POST /api/feeding/repeat-week': 'feeding',

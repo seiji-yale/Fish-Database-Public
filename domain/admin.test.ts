@@ -77,6 +77,28 @@ describe('lists', () => {
 });
 
 describe('settings', () => {
+  it('trims the Feeding Schedule notes, allows empty text and refuses more than 2000 characters', () => {
+    expect(
+      validateAdmin(settingsSchema, {
+        feedingScheduleNotes: '  Call Dr. X\nhttps://example.test  ',
+      }),
+    ).toEqual({
+      ok: true,
+      value: { feedingScheduleNotes: 'Call Dr. X\nhttps://example.test' },
+    });
+    expect(validateAdmin(settingsSchema, { feedingScheduleNotes: '   ' })).toEqual({
+      ok: true,
+      value: { feedingScheduleNotes: '' },
+    });
+    expect(validateAdmin(settingsSchema, { feedingScheduleNotes: 'x'.repeat(2000) }).ok).toBe(true);
+    expect(
+      errors(validateAdmin(settingsSchema, { feedingScheduleNotes: 'x'.repeat(2001) })),
+    ).toEqual({ feedingScheduleNotes: adminMessages.feedingNotesTooLong });
+    expect(errors(validateAdmin(settingsSchema, { feedingScheduleNotes: 5 }))).toEqual({
+      feedingScheduleNotes: adminMessages.feedingNotesTooLong,
+    });
+  });
+
   it('reads numbers typed as text and enforces the ranges', () => {
     expect(
       validateAdmin(settingsSchema, {

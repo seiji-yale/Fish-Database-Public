@@ -9,6 +9,7 @@ import {
   feedingMessages,
   isFeedingDate,
   repeatEventDates,
+  summaryCsvRows,
   validateDayWrite,
   validateEventEdit,
   validateEventScope,
@@ -18,6 +19,7 @@ import {
 } from '../../domain/feeding';
 import { labToday } from '../../domain/dates';
 import type { ActingUser } from '../../domain/types';
+import { csvFile } from '../export/csv';
 import { listAssignmentHistory } from '../db/queries/feedingAssignments';
 import { ApiError } from '../lib/errors';
 import { dayState, loadMonth, loadUsers, userNameOf } from '../lib/feedingRead';
@@ -57,6 +59,28 @@ feedingRoutes.get('/feeding', async (c) => {
   const month = validateMonth(requested);
   if (!month.ok) throw invalid({ month: month.message });
   return c.json(await loadMonth(c.env.DB, month.month, today));
+});
+
+/** FR-FEED-17: the month as one CSV (day rows, then totals), from the same numbers as the page (BR-16). */
+feedingRoutes.get('/feeding/summary.csv', async (c) => {
+  await requireCapability(c, 'feeding.export');
+  const month = validateMonth(c.req.query('month'));
+  if (!month.ok) throw invalid({ month: month.message });
+  const view = await loadMonth(c.env.DB, month.month, labToday());
+  const [header, ...rows] = summaryCsvRows(
+    view.days.map((day) => ({
+      date: day.date,
+      person:
+        day.assignment === null
+          ? null
+          : { id: day.assignment.userId, name: day.assignment.userName },
+      note: day.assignment?.note ?? null,
+      events: day.events.map((event) => event.title),
+    })),
+  );
+  c.header('Content-Type', 'text/csv; charset=utf-8');
+  c.header('Content-Disposition', `attachment; filename="feeding-schedule_${month.month}.csv"`);
+  return c.body(csvFile(header ?? [], rows));
 });
 
 feedingRoutes.get('/feeding/days/:date/history', async (c) => {

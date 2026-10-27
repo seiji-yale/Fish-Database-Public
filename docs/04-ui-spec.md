@@ -60,7 +60,7 @@ Collect core fields and optional child records in a responsive form. Validate be
 
 ## 7. Settings
 
-Admins manage members, lists, and exports. Ordinary members do not see administrative actions.
+Admins manage members, lists, preferences (including the Feeding Schedule notes & links) and exports. Ordinary members do not see administrative actions.
 
 ## 8. Feeding Schedule
 
@@ -94,6 +94,19 @@ the fourth button of the Dashboard navigation row and the first item of the acco
   that previews "Will fill N empty days; M already assigned days are kept", with `Also replace assigned days`
   (off by default), then `Apply`. Only days after that week are filled.
 
+- **Export (T-035).** For roles with `feeding.export`, an `Export` menu next to `Today` (on phones it floats at
+  the bottom right, like Line Detail): `Export as CSV` downloads `feeding-schedule_YYYY-MM.csv` (UTF-8 with a
+  byte order mark; a `Section` column; one `day` row per calendar day, then `total` rows per person and an
+  `Unassigned` row), and `Export as PDF` opens the print page.
+- **Print page** `/feeding/print?month=YYYY-MM`, outside the app shell: the title `Feeding Schedule — October
+2026`, the calendar with full names and event labels, the totals, Notes & links, and the footer
+  `Generated YYYY-MM-DD HH:mm by <name>`. It opens the browser's print dialog, set to landscape; Save as PDF
+  gives one page. Roles without `feeding.export` get the Not available screen.
+- **Notes & links.** An Admin edits the text in Settings → Preferences (`Feeding Schedule notes & links`, at most
+  2000 characters, plain text; empty removes the block). The block on the page shows an `Edit` link to
+  Preferences for Admins. Saving writes a `settings_changed` activity that says the notes changed (not the
+  text); Recent Activity lists line events only, so it does not appear there.
+
 Component inventory: `FeedingSchedulePage`, `FeedingCalendar` (with `FeedingDayCell`), `FeedingDayDialog`,
-`FeedingTotalsPanel`, `FeedingNotesBlock`, `RepeatWeekDialog`. Copy is in `app/src/strings.ts` under
+`FeedingTotalsPanel`, `FeedingNotesBlock`, `RepeatWeekDialog`, `FeedingPrintPage`. Copy is in `app/src/strings.ts` under
 `// Feeding Schedule (T-034)`.

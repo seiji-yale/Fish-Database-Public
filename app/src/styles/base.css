@@ -2678,6 +2678,19 @@ a.button--primary:hover {
 .feeding-page__head h1 {
   margin: 0;
 }
+.feeding-page__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.feeding-page__actions .export-menu {
+  margin-left: 0;
+}
+.feeding-notes__edit {
+  margin-left: var(--space-3);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
 .feeding-nav {
   display: flex;
   align-items: center;
@@ -2951,5 +2964,52 @@ div.feeding-cell {
   }
   .feeding-layout__notes {
     grid-column: 1 / -1;
+  }
+}
+
+/* Feeding Schedule print view (T-035): landscape, the grid on one page, names in full. */
+.feeding-print {
+  max-width: none;
+}
+.feeding-print__grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.feeding-print__grid th,
+.feeding-print__grid td {
+  padding: 4px 6px;
+  border: 1px solid #777;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.feeding-print__grid td {
+  height: 0.85in;
+}
+.feeding-print__day {
+  font-weight: 700;
+}
+.feeding-print__who {
+  font-size: 1.05em;
+}
+.feeding-print__event {
+  font-size: 0.8em;
+}
+.feeding-print__below {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin: var(--space-4) 0;
+}
+.feeding-print__below section {
+  border: 1px solid #777;
+  break-inside: avoid;
+}
+@media print {
+  .feeding-print__below {
+    margin: 0.12in 0;
+  }
+  .feeding-print__grid td {
+    height: 0.72in;
   }
 }

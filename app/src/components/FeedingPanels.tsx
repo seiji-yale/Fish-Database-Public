@@ -24,11 +24,28 @@ export function FeedingTotalsPanel({ totals }: { totals: FeedingTotals }) {
   );
 }
 
-export function FeedingNotesBlock({ notes }: { notes: string }) {
+export function FeedingNotesBlock({
+  notes,
+  canEdit = false,
+  linkOnly = false,
+}: {
+  notes: string;
+  /** An Admin gets an `Edit` link to Settings → Preferences. */
+  canEdit?: boolean;
+  /** Print view: no Edit link, no interaction. */
+  linkOnly?: boolean;
+}) {
   if (notes.trim() === '') return null;
   return (
     <section className="feeding-notes" aria-labelledby="feeding-notes-title">
-      <h2 id="feeding-notes-title">{strings.feedingNotesTitle}</h2>
+      <h2 id="feeding-notes-title">
+        {strings.feedingNotesTitle}
+        {canEdit && !linkOnly ? (
+          <a className="feeding-notes__edit" href="/settings#preferences">
+            {strings.feedingNotesEdit}
+          </a>
+        ) : null}
+      </h2>
       <p>
         {linkParts(notes).map((part, index) =>
           part.href === undefined ? (

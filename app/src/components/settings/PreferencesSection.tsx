@@ -17,6 +17,7 @@ export function PreferencesSection({ overview, admin, reload }: SectionProps) {
   const [threshold, setThreshold] = useState(String(settings.upcomingBreedingMonths));
   const [annealing, setAnnealing] = useState(String(settings.defaultAnnealingC));
   const [cycles, setCycles] = useState(String(settings.defaultCycles));
+  const [feedingNotes, setFeedingNotes] = useState(settings.feedingScheduleNotes);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [rotating, setRotating] = useState(false);
 
@@ -34,6 +35,10 @@ export function PreferencesSection({ overview, admin, reload }: SectionProps) {
                 upcomingBreedingMonths: threshold,
                 defaultAnnealingC: annealing,
                 defaultCycles: cycles,
+                // Only a changed text is sent, so saving the numbers never overwrites someone else's notes.
+                ...(feedingNotes === settings.feedingScheduleNotes
+                  ? {}
+                  : { feedingScheduleNotes: feedingNotes }),
               }),
             {
               doneMessage: strings.prefDone,
@@ -82,6 +87,17 @@ export function PreferencesSection({ overview, admin, reload }: SectionProps) {
           value={cycles}
           error={errors['defaultCycles']}
           onChange={setCycles}
+        />
+        <TextField
+          id="sp-feeding-notes"
+          label={strings.prefFeedingNotes}
+          hint={strings.prefFeedingNotesHint}
+          multiline
+          rows={6}
+          maxLength={2000}
+          value={feedingNotes}
+          error={errors['feedingScheduleNotes']}
+          onChange={setFeedingNotes}
         />
         <button type="submit" className="button--primary" disabled={admin.busy}>
           {strings.prefSave}

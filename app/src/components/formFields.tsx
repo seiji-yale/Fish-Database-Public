@@ -81,6 +81,7 @@ export function TextField({
   onChange,
   onBlur,
   multiline = false,
+  rows = 3,
   type = 'text',
   inputMode,
   maxLength,
@@ -91,6 +92,8 @@ export function TextField({
   onChange: (value: string) => void;
   onBlur?: () => void;
   multiline?: boolean;
+  /** Visible lines of a multiline field. */
+  rows?: number;
   type?: 'text' | 'url' | 'number' | 'password';
   inputMode?: 'numeric' | 'decimal' | 'text';
   maxLength?: number;
@@ -122,7 +125,7 @@ export function TextField({
       {multiline ? (
         <textarea
           {...shared}
-          rows={3}
+          rows={rows}
           onChange={(event) => {
             onChange(event.target.value);
           }}

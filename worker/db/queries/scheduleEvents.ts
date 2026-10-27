@@ -46,7 +46,7 @@ export function softDeleteEventStatement(db: Db, id: string, now: string, by: st
     .bind(now, by, id);
 }
 
-/** The live events of the days from `from` to `to` inclusive, in date order. */
+/** The live events of the days from `from` to `to` inclusive: by date, then by title (so the order never depends on ids made in the same second). */
 export async function listEventsInRange(
   db: Db,
   from: string,
@@ -54,7 +54,7 @@ export async function listEventsInRange(
 ): Promise<ScheduleEventRow[]> {
   const { results } = await db
     .prepare(
-      'SELECT * FROM schedule_events WHERE date BETWEEN ? AND ? AND deleted_at IS NULL ORDER BY date, created_at, id',
+      'SELECT * FROM schedule_events WHERE date BETWEEN ? AND ? AND deleted_at IS NULL ORDER BY date, title COLLATE NOCASE, id',
     )
     .bind(from, to)
     .all<ScheduleEventRow>();

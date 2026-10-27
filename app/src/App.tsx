@@ -1,5 +1,6 @@
 import { AppShell } from './components/AppShell';
 import { GuestEntryPage, JoinPage } from './pages/AccountPages';
+import { FeedingPrintPage } from './pages/FeedingPrintPage';
 import { FeedingSchedulePage } from './pages/FeedingSchedulePage';
 import { LineDetailPage } from './pages/LineDetailPage';
 import { LinesPage } from './pages/LinesPage';
@@ -21,6 +22,7 @@ function page(path: string) {
         <NewLinePage />
       </RequireCapability>
     );
+  if (path === '/feeding/print') return <FeedingPrintPage />;
   if (path === '/feeding')
     return (
       <RequireCapability capability="feeding.read">
