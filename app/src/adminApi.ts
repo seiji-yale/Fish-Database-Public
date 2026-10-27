@@ -11,6 +11,8 @@ export interface AdminUser {
   invitePending: boolean;
   /** A password exists (false: never invited). */
   canSignIn: boolean;
+  /** Named by the Feeding Schedule sheet import and not yet decided on (inactive, no password). */
+  provisional: boolean;
 }
 
 export interface AdminListEntry {

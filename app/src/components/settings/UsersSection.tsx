@@ -50,6 +50,7 @@ export function UsersSection({ overview, admin, reload: reloadOverview }: Sectio
   const [deleting, setDeleting] = useState<AdminUser | null>(null);
   const [showRemoved, setShowRemoved] = useState(false);
   const removedCount = overview.users.filter((user) => !user.isActive && !user.isBuiltin).length;
+  const provisionalCount = overview.users.filter((user) => user.provisional).length;
   // Removed people are hidden unless asked for (the retired built-in Admin entry never shows).
   const visibleUsers = overview.users.filter(
     (user) => user.isActive || (showRemoved && !user.isBuiltin),
@@ -126,6 +127,22 @@ export function UsersSection({ overview, admin, reload: reloadOverview }: Sectio
       </form>
 
       <h2>{strings.tabUsers}</h2>
+      {provisionalCount === 0 ? null : (
+        <div className="settings-notice" role="status">
+          <p>{strings.userProvisionalNotice(provisionalCount)}</p>
+          <p>{strings.userProvisionalHint}</p>
+          {showRemoved ? null : (
+            <button
+              type="button"
+              onClick={() => {
+                setShowRemoved(true);
+              }}
+            >
+              {strings.userProvisionalShow}
+            </button>
+          )}
+        </div>
+      )}
       {removedCount === 0 ? null : (
         <p>
           <button
@@ -152,6 +169,7 @@ export function UsersSection({ overview, admin, reload: reloadOverview }: Sectio
               {user.isActive && !user.isBuiltin && !user.canSignIn ? (
                 <span className="chip chip--muted">{strings.userNoPassword}</span>
               ) : null}
+              {user.provisional ? <span className="chip">{strings.userProvisional}</span> : null}
               <span className={user.isActive ? 'chip' : 'chip chip--muted'}>
                 {user.isActive ? strings.userActive : strings.userInactive}
               </span>

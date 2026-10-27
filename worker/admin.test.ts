@@ -6,7 +6,7 @@ import fixture from '../tests/fixtures/lines.small.json';
 import { loadFixture } from './db/fixtures';
 import { listActivitiesByLine } from './db/queries/activities';
 import { getLineByName } from './db/queries/lines';
-import { browser, TEST_ADMIN, type ErrorBody } from './testBrowser';
+import { TEST_ADMIN_ID, browser, TEST_ADMIN, type ErrorBody } from './testBrowser';
 
 async function setup(actor = 'Admin') {
   const b = browser();
@@ -83,6 +83,54 @@ describe('overview', () => {
     });
     expect(typeof overview.settings['databaseName']).toBe('string');
     expect(overview.settings).not.toHaveProperty('passphraseEnabled');
+  });
+});
+
+describe('provisional users from the sheet import (T-036)', () => {
+  const NOW = '2026-10-27T12:00:00Z';
+  async function importedFeeder(
+    s: Awaited<ReturnType<typeof setup>>,
+    id: string,
+    name: string,
+    imported: boolean,
+    date: string,
+  ) {
+    await s.db
+      .prepare(
+        "INSERT INTO users (id, name, role, is_active, is_builtin, created_at, updated_at) VALUES (?, ?, 'feeder', 0, 0, ?, ?)",
+      )
+      .bind(id, name, NOW, NOW)
+      .run();
+    await s.db
+      .prepare(
+        'INSERT INTO feeding_assignments (id, date, user_id, note, imported_from, created_at, created_by) VALUES (?, ?, ?, NULL, ?, ?, ?)',
+      )
+      .bind(`fa-${id}`, date, id, imported ? 'October2026!G7' : null, NOW, TEST_ADMIN_ID)
+      .run();
+  }
+  const flags = async (s: Awaited<ReturnType<typeof setup>>) =>
+    Object.fromEntries(
+      (
+        await (
+          await s.call('/api/admin/overview')
+        ).json<{
+          users: { name: string; isActive: boolean; provisional: boolean }[];
+        }>()
+      ).users.map((user) => [user.name, user.provisional]),
+    );
+
+  it('marks an inactive user without a password whom an import named, until an Admin reactivates them', async () => {
+    const s = await setup();
+    await importedFeeder(s, 'prov-1', 'Feeder Four', true, '2026-10-01');
+    await importedFeeder(s, 'prov-2', 'Handmade', false, '2026-10-02'); // inactive, but nobody imported them
+    const before = await flags(s);
+    expect(before['Feeder Four']).toBe(true);
+    expect(before['Handmade']).toBe(false);
+    expect(before['Erin']).toBe(false); // removed the ordinary way
+    expect(before['Admin']).toBe(false); // the retired built-in Admin is never provisional
+    const reactivated = await s.admin('/api/admin/users/prov-1', { isActive: true }, 'PATCH');
+    expect(reactivated.status).toBe(200);
+    expect((await flags(s))['Feeder Four']).toBe(false);
   });
 });
 
