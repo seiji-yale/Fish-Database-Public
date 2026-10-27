@@ -9,11 +9,14 @@ import {
   getFeedingHistory,
   putFeedingDay,
   type FeedingDay,
+  type FeedingEvent,
   type FeedingHistoryRow,
   type FeedingPerson,
 } from '../feedingApi';
 import { formatDateTime } from '../dateFormat';
 import { strings } from '../strings';
+import { FeedingEventRemoveDialog } from './FeedingEventRemoveDialog';
+import { FeedingEventsSection } from './FeedingEvents';
 import { Modal } from './Modal';
 import { ConfirmDialog } from './shared';
 
@@ -72,8 +75,17 @@ export function FeedingDayDialog({
   onClose,
   onSaved,
   onReload,
+  month,
+  titles,
+  onEventsChanged,
 }: {
   day: FeedingDay;
+  /** The month on screen (the default last day of a repeat). */
+  month: string;
+  /** Event titles used before, for the suggestions. */
+  titles: readonly string[];
+  /** After an event was added, changed or removed: reload the month; the text is the toast. */
+  onEventsChanged: (message: string) => void;
   assignable: readonly FeedingPerson[];
   canWrite: boolean;
   onClose: () => void;
@@ -92,6 +104,7 @@ export function FeedingDayDialog({
   const [problem, setProblem] = useState<Problem | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [removing, setRemoving] = useState<FeedingEvent | null>(null);
 
   const assigned = current.assignment;
   const currentOption =
@@ -147,6 +160,22 @@ export function FeedingDayDialog({
     }
     setBusy(false);
   }
+
+  if (removing !== null)
+    return (
+      <FeedingEventRemoveDialog
+        event={removing}
+        weekday={current.weekday}
+        date={current.date}
+        onCancel={() => {
+          setRemoving(null);
+        }}
+        onDone={(message) => {
+          setRemoving(null);
+          onEventsChanged(message);
+        }}
+      />
+    );
 
   if (confirmClear)
     return (
@@ -229,6 +258,14 @@ export function FeedingDayDialog({
             ) : null}
           </div>
         )}
+        <FeedingEventsSection
+          day={day}
+          month={month}
+          canWrite={canWrite}
+          titles={titles}
+          onChanged={onEventsChanged}
+          onRemove={setRemoving}
+        />
         <p className="feeding-dialog__meta">
           {assigned === null
             ? strings.feedingNeverSet

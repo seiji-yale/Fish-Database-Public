@@ -792,6 +792,38 @@ export const strings = {
   feedingNoTotals: 'Nobody is assigned this month yet.',
   feedingNotesTitle: 'Notes & links',
   feedingNotesEdit: 'Edit',
+  // Schedule events (T-037)
+  feedingEvents: 'Events',
+  feedingEventsNone: 'No events on this day.',
+  feedingEventAdd: '+ Add event',
+  feedingEventTitle: 'Title',
+  feedingEventNote: 'Event note',
+  feedingEventSave: 'Save event',
+  feedingEventEdit: 'Edit',
+  feedingEventRemove: 'Remove',
+  feedingEventRepeat: 'Repeat weekly',
+  feedingEventUntil: 'Repeat until',
+  feedingEventPreview: (count: number, weekday: string, last: string) =>
+    `Will add ${String(count)} events, every ${weekday} until ${last}.`,
+  feedingEventChecking: 'Counting the events…',
+  feedingEventScope: 'Apply to',
+  feedingEventThis: 'This event only',
+  feedingEventFollowing: (count: number) => `This and all following (${String(count)})`,
+  feedingEventDelete: 'Delete this event',
+  feedingEventDeleteFollowing: (count: number) =>
+    `Delete this and all following (${String(count)})`,
+  feedingEventRemoveTitle: (title: string) => `Remove "${title}"?`,
+  feedingEventRemoveBody: (weekday: string, date: string) => `On ${weekday}, ${date}.`,
+  feedingEventRepeatsNote: 'Repeats weekly',
+  feedingEventAdded: (count: number) =>
+    count === 1 ? 'Event added' : `${String(count)} events added`,
+  feedingEventUpdated: (count: number) =>
+    count === 1 ? 'Event updated' : `${String(count)} events updated`,
+  feedingEventRemoved: (count: number) =>
+    count === 1 ? 'Event removed' : `${String(count)} events removed`,
+  feedingEventFailed: 'The event could not be saved. Please try again.',
+  feedingEventGone: 'This event was already removed by someone else. The day was reloaded.',
+  feedingEventTitleHint: 'At most 60 characters.',
   feedingPrintTitle: (month: string) => `Feeding Schedule — ${month}`,
   feedingPrintGenerated: (time: string, who: string) => `Generated ${time} by ${who}`,
   feedingExportMenu: 'Export',

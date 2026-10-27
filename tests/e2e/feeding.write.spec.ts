@@ -51,7 +51,7 @@ test('set, change and clear a day; the cell, the totals and the history follow',
   await page.goto(`/feeding?month=${month}`);
   await openDay(page, date);
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('heading')).toContainText(date);
+  await expect(dialog.getByRole('heading', { level: 2 })).toContainText(date);
   await dialog.getByLabel('Feeder').selectOption({ label: 'Alice' });
   await dialog.getByLabel('Note').fill('covering for the weekend');
   await expect(dialog.getByText('24/200')).toBeVisible();
