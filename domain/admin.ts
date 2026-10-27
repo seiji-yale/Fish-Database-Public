@@ -29,6 +29,7 @@ export const adminMessages = {
   databaseNameTooLong: 'Use at most 80 characters for the database name.',
   annealingInvalid: 'Enter a temperature from 30 to 80 °C.',
   cyclesInvalid: 'Enter a whole number of cycles from 1 to 100.',
+  feedingNotesTooLong: 'Use at most 2000 characters for the Feeding Schedule notes.',
   passwordTooShort: 'Use at least 8 characters.',
   nothingToChange: 'Nothing to change.',
 } as const;
@@ -125,6 +126,12 @@ export const settingsSchema = z.object({
     .transform((value) => value as number)
     .optional(),
   defaultCycles: wholeNumber(1, 100, adminMessages.cyclesInvalid).optional(),
+  // Notes & links of the Feeding Schedule (T-035, FR-FEED-24): plain text; empty clears it.
+  feedingScheduleNotes: z
+    .string({ error: adminMessages.feedingNotesTooLong })
+    .trim()
+    .max(2000, adminMessages.feedingNotesTooLong)
+    .optional(),
 });
 
 /** Read-only mode on or off (T-021). */

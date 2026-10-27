@@ -115,9 +115,13 @@ adminRoutes.get('/admin/overview', async (c) => {
   const [users, settings, importReport, mirrorOk, mirrorError, mirrorInfo] = await Promise.all([
     listUsers(db, { includeInactive: true }),
     Promise.all(
-      ['upcoming_breeding_months', 'default_annealing_c', 'default_cycles', 'app_name'].map((key) =>
-        getSetting(db, key),
-      ),
+      [
+        'upcoming_breeding_months',
+        'default_annealing_c',
+        'default_cycles',
+        'app_name',
+        'feeding_schedule_notes',
+      ].map((key) => getSetting(db, key)),
     ),
     getSetting(db, 'import_report_md'),
     getSetting(db, 'mirror_last_ok_at'),
@@ -152,6 +156,7 @@ adminRoutes.get('/admin/overview', async (c) => {
       upcomingBreedingMonths: Number(settings[0] ?? '11'),
       defaultAnnealingC: Number(settings[1] ?? '60'),
       defaultCycles: Number(settings[2] ?? '35'),
+      feedingScheduleNotes: settings[4] ?? '',
     },
     importReport,
     readOnly: await isReadOnly(db),
@@ -515,6 +520,23 @@ adminRoutes.patch('/admin/settings', async (c) => {
         )
         .bind(key, String(next)),
     );
+  }
+  if (input.feedingScheduleNotes !== undefined) {
+    const before = (await getSetting(db, 'feeding_schedule_notes')) ?? '';
+    if (before !== input.feedingScheduleNotes) {
+      // The text itself can be long and is shown on the page: the activity only says it changed.
+      changes.push('Feeding Schedule notes changed');
+      statements.push(
+        db
+          .prepare(
+            'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+          )
+          .bind(
+            'feeding_schedule_notes',
+            input.feedingScheduleNotes === '' ? null : input.feedingScheduleNotes,
+          ),
+      );
+    }
   }
   if (statements.length === 0) throw invalid({ form: adminMessages.nothingToChange });
   statements.push(

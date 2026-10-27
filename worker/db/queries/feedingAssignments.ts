@@ -54,10 +54,16 @@ export async function listCurrentAssignments(
   return results;
 }
 
-/** Every value a day has had, oldest first (the current one last). */
+/**
+ * Every value a day has had, oldest first (the current one last). Two changes inside one second share a
+ * `created_at`: the one still in force sorts after the ones already replaced, so the order never depends
+ * on the random part of an id.
+ */
 export async function listAssignmentHistory(db: Db, date: string): Promise<FeedingAssignmentRow[]> {
   const { results } = await db
-    .prepare('SELECT * FROM feeding_assignments WHERE date = ? ORDER BY created_at, id')
+    .prepare(
+      'SELECT * FROM feeding_assignments WHERE date = ? ORDER BY created_at, replaced_at IS NULL, replaced_at, id',
+    )
     .bind(date)
     .all<FeedingAssignmentRow>();
   return results;

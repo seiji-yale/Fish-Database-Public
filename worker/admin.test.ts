@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getSetting } from './db/queries/settings';
 import { crc32 } from './export/zip';
 import { exportSchema } from './export/schema';
 import fixture from '../tests/fixtures/lines.small.json';
@@ -265,6 +266,43 @@ describe('settings (FR-ADM-03)', () => {
       await s.call('/api/admin/overview')
     ).json<{ settings: { defaultAnnealingC: number; defaultCycles: number } }>();
     expect(overview.settings).toMatchObject({ defaultAnnealingC: 58, defaultCycles: 30 });
+  });
+
+  it('saves the Feeding Schedule notes: trimmed, logged without the text, clearable', async () => {
+    const s = await setup();
+    const read = async () =>
+      (
+        await (
+          await s.call('/api/admin/overview')
+        ).json<{
+          settings: { feedingScheduleNotes: string };
+        }>()
+      ).settings.feedingScheduleNotes;
+    expect(await read()).toBe('');
+    const text = 'Emergency: Dr. X, 555-0100\nhttps://example.test/protocol';
+    const saved = await s.admin(
+      '/api/admin/settings',
+      { feedingScheduleNotes: `  ${text}  ` },
+      'PATCH',
+    );
+    expect(saved.status).toBe(200);
+    expect(await getSetting(s.db, 'feeding_schedule_notes')).toBe(text);
+    const summary = (await s.activities())[0]?.summary ?? '';
+    expect(summary).toBe('Settings: Feeding Schedule notes changed.');
+    expect(await read()).toBe(text);
+
+    const same = await s.admin('/api/admin/settings', { feedingScheduleNotes: text }, 'PATCH');
+    expect(same.status).toBe(400);
+    const tooLong = await s.admin(
+      '/api/admin/settings',
+      { feedingScheduleNotes: 'x'.repeat(2001) },
+      'PATCH',
+    );
+    expect((await s.fields(tooLong))['feedingScheduleNotes']).toBeTruthy();
+
+    const cleared = await s.admin('/api/admin/settings', { feedingScheduleNotes: '' }, 'PATCH');
+    expect(cleared.status).toBe(200);
+    expect(await getSetting(s.db, 'feeding_schedule_notes')).toBeNull();
   });
 
   it('the PCR defaults set here are what a new protocol gets, on the server and for the forms', async () => {

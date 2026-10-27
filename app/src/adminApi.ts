@@ -33,6 +33,7 @@ export interface AdminOverview {
     upcomingBreedingMonths: number;
     defaultAnnealingC: number;
     defaultCycles: number;
+    feedingScheduleNotes: string;
   };
   importReport: string | null;
   readOnly: boolean;

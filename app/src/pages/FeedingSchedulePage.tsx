@@ -106,14 +106,27 @@ export function FeedingSchedulePage() {
     <section className="feeding-page" data-view={url.view}>
       <div className="feeding-page__head">
         <h1>{strings.feedingSchedule}</h1>
-        <button
-          type="button"
-          onClick={() => {
-            go(today.slice(0, 7));
-          }}
-        >
-          {strings.feedingToday}
-        </button>
+        <div className="feeding-page__actions">
+          <button
+            type="button"
+            onClick={() => {
+              go(today.slice(0, 7));
+            }}
+          >
+            {strings.feedingToday}
+          </button>
+          {acting.can('feeding.export') ? (
+            <details className="export-menu">
+              <summary>{`${strings.feedingExportMenu} ${strings.dropdownIcon}`}</summary>
+              <div className="export-menu__items">
+                <a href={`/api/feeding/summary.csv?month=${url.month}`} download>
+                  {strings.feedingExportCsv}
+                </a>
+                <a href={`/feeding/print?month=${url.month}`}>{strings.feedingExportPdf}</a>
+              </div>
+            </details>
+          ) : null}
+        </div>
       </div>
       <nav className="feeding-nav" aria-label={strings.feedingMonthNav}>
         <button
@@ -189,7 +202,7 @@ export function FeedingSchedulePage() {
             <FeedingTotalsPanel totals={shown.totals} />
           </div>
           <div className="feeding-layout__notes">
-            <FeedingNotesBlock notes={shown.notes} />
+            <FeedingNotesBlock notes={shown.notes} canEdit={acting.can('admin.*')} />
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@
 
 |                  |                                                                       |
 | ---------------- | --------------------------------------------------------------------- |
-| State            | Draft                                                                 |
+| State            | Review                                                                |
 | Size             | S                                                                     |
 | Phase            | 5 (Feeding Schedule & restricted view)                                |
 | Depends on       | T-034                                                                 |
@@ -76,3 +76,13 @@ and the lab's notes; an Admin maintains the notes (emergency contact, protocol l
 ## Review Log
 
 <!-- Append Step Reports, Step Reviews, Ticket Review, Owner feedback here, newest at the bottom. -->
+
+### Steps 1 to 3 — 2026-10-26 — implementer
+
+- Step 1: `GET /api/feeding/summary.csv?month=` behind `feeding.export` (400 for a bad month, 403 for Guests), built by `summaryCsvRows` and `csvFile` (byte order mark, CRLF, text that looks like a formula is quoted safe, `Events` joined with `; `). The route test reads the bytes: three BOM bytes, 31 `day` rows, `total` rows equal to the page's totals. `Export` menu on the page (same `.export-menu` as Line Detail; floating on phones).
+- Step 2: `/feeding/print` (`FeedingPrintPage`, outside the shell): title, calendar with full names and events, totals, Notes & links, footer `Generated … by <name>`; an `@page { size: landscape }` rule is added while the page is open. Checked by printing it to PDF in Chromium: one page, 792 x 612 pt (Letter landscape). A role without `feeding.export` gets the Not available screen.
+- Step 3: `settingsSchema.feedingScheduleNotes` (trimmed, at most 2000, empty allowed; domain tests at 100 %), `PATCH /api/admin/settings` stores it (empty removes the row's value) and writes a `settings_changed` activity that says only `Feeding Schedule notes changed.` (the text can be long and is not personal data worth copying into a log); `GET /api/admin/overview` returns it; Preferences has a `Feeding Schedule notes & links` text area that sends the notes only when they changed (saving the numbers never overwrites someone else's notes); the page's block shows an `Edit` link to Preferences for Admins. The export already carried the setting (T-033).
+- Tests: worker (CSV, admin settings), domain, `feedingPrint.spec.ts` (Export menu, the CSV download and its bytes, the print view, Guest) and `feedingNotes.write.spec.ts` (Admin saves, Member sees links, clearing hides the block; one viewport only because the notes are one lab-wide setting). Full browser suite green (400 tests).
+- Fixes found on the way: two lists were ordered by ids made in the same second, which can differ run to run: the history of a day now puts the value still in force last, and the events of a day are ordered by title.
+- Deviations: (1) acceptance 3 says the settings change shows in Recent Activity; Recent Activity lists line events only (owner decision 2026-09-30), so the entry is in the activity log and the export but not on the Dashboard; (2) `user-guide.md` and the FR-ADM-03 note: no user guide exists in this repository, and FR-ADM-03 lives in `docs/01-requirements.md`, which this ticket leaves as it is (the Settings description is in `04-ui-spec.md`); (3) `snapshot.html` is unchanged (OQ-45 b: not included).
+- This branch contains the T-034 commits (T-035 depends on T-034); merge T-034's PR first.
