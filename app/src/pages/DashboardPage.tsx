@@ -142,6 +142,11 @@ function RestrictedDashboard({ data }: { data: RestrictedDashboardResponse }) {
         <a className="button--primary" href="/lines?view=all">
           {strings.seeAllLines}
         </a>
+        {acting.can('feeding.read') ? (
+          <a className="button--primary" href="/feeding">
+            {strings.feedingSchedule}
+          </a>
+        ) : null}
       </nav>
     </div>
   );
@@ -572,6 +577,11 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
         <a className="button--primary" href="/lines/new">
           {strings.addNewLine}
         </a>
+        {acting.can('feeding.read') ? (
+          <a className="button--primary" href="/feeding">
+            {strings.feedingSchedule}
+          </a>
+        ) : null}
       </nav>
     </div>
   );

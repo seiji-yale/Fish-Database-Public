@@ -1,5 +1,6 @@
 import { AppShell } from './components/AppShell';
 import { GuestEntryPage, JoinPage } from './pages/AccountPages';
+import { FeedingSchedulePage } from './pages/FeedingSchedulePage';
 import { LineDetailPage } from './pages/LineDetailPage';
 import { LinesPage } from './pages/LinesPage';
 import { NewLinePage } from './pages/NewLinePage';
@@ -20,14 +21,10 @@ function page(path: string) {
         <NewLinePage />
       </RequireCapability>
     );
-  // The Feeding Schedule page arrives with T-034; until then the route is closed to roles without it.
   if (path === '/feeding')
     return (
       <RequireCapability capability="feeding.read">
-        <section className="page-placeholder">
-          <h1>{strings.feedingSchedule}</h1>
-          <p>{strings.placeholder}</p>
-        </section>
+        <FeedingSchedulePage />
       </RequireCapability>
     );
   if (path === '/settings') return <SettingsPage />;

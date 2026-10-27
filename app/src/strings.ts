@@ -10,6 +10,10 @@ export function setAppName(value: string): void {
   if (value.trim() !== '') activeAppName = value.trim();
 }
 
+function dayCountText(count: number): string {
+  return `${String(count)} ${count === 1 ? 'day' : 'days'}`;
+}
+
 export const strings = {
   get appName() {
     return activeAppName;
@@ -734,6 +738,69 @@ export const strings = {
   signedInAs: (name: string) => `Signed in as ${name}`,
   guestView: 'Guest view: read only',
   feedingSchedule: 'Feeding Schedule',
+  // Feeding Schedule (T-034)
+  feedingNobody: '— Nobody —',
+  feedingNone: '—',
+  feedingWarnIcon: '⚠',
+  feedingNoteIcon: '✎',
+  feedingTodayDot: '•',
+  feedingUnassigned: 'Unassigned',
+  feedingToday: 'Today',
+  feedingTotals: 'This month',
+  feedingPrevious: '‹ Previous',
+  feedingNext: 'Next ›',
+  feedingMonthPicker: 'Choose a month',
+  feedingMonthNav: 'Month navigation',
+  feedingViewLabel: 'Calendar layout',
+  feedingViewGrid: 'Grid',
+  feedingViewList: 'List',
+  feedingWeekActions: 'Week actions',
+  feedingWeekOf: (date: string) => `Week of ${date}`,
+  feedingLoadError:
+    'The Feeding Schedule could not be loaded. Check your connection and try again.',
+  feedingNoteMarker: 'Has a note',
+  feedingCell: (heading: string, who: string) => `${heading}: ${who}`,
+  feedingDayTitle: (weekday: string, date: string) => `${weekday}, ${date}`,
+  feedingFeeder: 'Feeder',
+  feedingNote: 'Note',
+  feedingNoteCount: (used: number) => `${String(used)}/200`,
+  feedingNotActive: (name: string) => `${name} (not active)`,
+  feedingChangedBy: (user: string, time: string) => `Last changed by ${user} on ${time}`,
+  feedingNeverSet: 'Nobody has been assigned to this day yet.',
+  feedingShowHistory: 'Show history',
+  feedingHistoryLoading: 'Loading the history…',
+  feedingHistoryError: 'The history could not be loaded.',
+  feedingHistoryEmpty: 'No earlier values.',
+  feedingHistoryRow: (name: string, by: string, at: string) => `${name} · set by ${by} on ${at}`,
+  feedingHistoryReplaced: (by: string, at: string) => `replaced by ${by} on ${at}`,
+  feedingHistoryNone: '(nobody)',
+  feedingClearTitle: 'Clear this day?',
+  feedingClearConfirm: (weekday: string, date: string, name: string) =>
+    `Clear ${weekday}, ${date} (${name})?`,
+  feedingClearButton: 'Clear',
+  feedingSaved: (date: string) => `Saved ${date}`,
+  feedingCleared: (date: string) => `Cleared ${date}`,
+  feedingConflictReload: 'Reload this day',
+  feedingSaveFailed: 'The day could not be saved. Please try again.',
+  feedingUserNotAssignable: 'Choose an active Admin, Member or Feeder.',
+  feedingTotalLine: (name: string, total: number, weekdays: number, weekend: number) =>
+    `${name} · ${dayCountText(total)} (${weekdays === 1 ? '1 weekday' : `${String(weekdays)} weekdays`}, ${weekend === 1 ? '1 weekend day' : `${String(weekend)} weekend days`})`,
+  feedingUnassignedLine: (count: number) => `Unassigned · ${dayCountText(count)}`,
+  feedingNoTotals: 'Nobody is assigned this month yet.',
+  feedingNotesTitle: 'Notes & links',
+  feedingRepeatWeek: 'Repeat this week…',
+  feedingRepeatTitle: (weekStart: string) => `Repeat the week of ${weekStart}`,
+  feedingRepeatIntro: (month: string) => `Fill the rest of ${month} with this week's pattern.`,
+  feedingRepeatPreview: (empty: number, kept: number) =>
+    `Will fill ${String(empty)} empty ${empty === 1 ? 'day' : 'days'}; ${String(kept)} already assigned ${kept === 1 ? 'day is' : 'days are'} kept.`,
+  feedingRepeatPreviewReplace: (empty: number, replaced: number, kept: number) =>
+    `Will fill ${String(empty)} empty ${empty === 1 ? 'day' : 'days'} and replace ${String(replaced)} assigned ${replaced === 1 ? 'day' : 'days'}; ${String(kept)} already matching ${kept === 1 ? 'day is' : 'days are'} kept.`,
+  feedingRepeatOverwrite: 'Also replace assigned days',
+  feedingRepeatApply: 'Apply',
+  feedingRepeatChecking: 'Counting the days…',
+  feedingRepeatDone: (filled: number, kept: number, replaced: number) =>
+    `Filled ${String(filled)} ${filled === 1 ? 'day' : 'days'}${replaced > 0 ? `, replaced ${String(replaced)}` : ''}; kept ${String(kept)}.`,
+  feedingRepeatEmptyWeek: 'This week has no feeders to copy.',
   notAvailableGuestTitle: 'Not available in the Guest view',
   notAvailableTitle: 'Not available for your account',
   notAvailableHint: 'This page is for lab members. The lines you can see are in the Lines list.',

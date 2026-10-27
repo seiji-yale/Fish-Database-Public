@@ -6,7 +6,16 @@
 import type { ReactNode } from 'react';
 
 export type IconName =
-  'upload' | 'camera' | 'trash' | 'pencil' | 'copy' | 'download' | 'open' | 'changes' | 'restore';
+  | 'upload'
+  | 'camera'
+  | 'trash'
+  | 'pencil'
+  | 'copy'
+  | 'download'
+  | 'open'
+  | 'changes'
+  | 'restore'
+  | 'repeat';
 
 const PATHS: Record<IconName, ReactNode> = {
   upload: <path d="M12 16V4m-5 5 5-5 5 5M4 20h16" />,
@@ -20,6 +29,8 @@ const PATHS: Record<IconName, ReactNode> = {
   pencil: <path d="m4 20 1-4L16 5l3 3L8 19zM14 7l3 3" />,
   changes: <path d="M5 7h14M5 12h14M5 17h9" />,
   restore: <path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5M12 8v5l3 2" />,
+  // A circular arrow: do the same again.
+  repeat: <path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5" />,
   download: <path d="M12 4v12m-5-5 5 5 5-5M4 20h16" />,
   open: <path d="M14 4h6v6m0-6-9 9m7 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />,
   copy: (

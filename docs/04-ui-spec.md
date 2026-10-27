@@ -61,3 +61,39 @@ Collect core fields and optional child records in a responsive form. Validate be
 ## 7. Settings
 
 Admins manage members, lists, and exports. Ordinary members do not see administrative actions.
+
+## 8. Feeding Schedule
+
+Page `/feeding` (T-034), for roles with `feeding.read` (Feeders, Members, Admins). Guests see the
+standard "Not available" screen. It is reached from the header (top navigation, and the tab bar on phones),
+the fourth button of the Dashboard navigation row and the first item of the account menu.
+
+- **Month and URL.** `?month=2026-10` (default: the current month in `America/New_York`) and, on phones,
+  `?view=list`. Previous, Next, Today and one month box (which also names the month; there is no second
+  "Month Year" heading, only a hidden one for screen readers) move between months without reloading; the
+  address follows, so a month can be bookmarked. The page reads the month again when the window regains
+  focus (not while a dialog is open).
+- **Calendar.** A table, Sunday first, with column headers; days outside the month are blank. Each day is
+  one button (at least 44 px tall): the day number, the feeder's name, `—` when nobody is assigned, `Unassigned`
+  with a warning mark from today through today + 13 days, `Today` on today's cell (outline and word), a note
+  mark, and event labels. Phones (under 640 px) show seven compact columns with truncated names and a dot for
+  events, plus a `Grid | List` switch; the List shows every day as `Thu 1 · Feeder One · event`, grouped by week.
+  The calendar uses the full window width. The totals and Notes & links sit beside the calendar only on a wide
+  window held landscape (1024 px and up); held upright they sit under it, so the calendar keeps the whole width.
+- **Day dialog.** Title `Thursday, 2026-10-01`; a `Feeder` select (`— Nobody —`, then the assignable people by
+  name), a `Note` field with a counter (200 characters), `Cancel` and `Save`, the line `Last changed by … on …`
+  and a `Show history` expander listing every earlier value (who set it, when, and who replaced it). Clearing an
+  assigned day asks for confirmation. If someone else changed the day meanwhile the save is refused with
+  "This day was changed by … at …" and a `Reload this day` button; the dialog then shows the new value.
+  A save updates the cell and the month totals at once and shows a toast. Focus returns to the day.
+- **Totals and Notes & links.** The panel lists, for each person, days with weekday and weekend counts, and the
+  unassigned days; the numbers come from the same function as the server (BR-16). Notes & links shows the
+  setting `feeding_schedule_notes` with web addresses as links; it is edited in Settings (T-035).
+- **Repeat this week.** A circular-arrow button at the end of each week row (desktop and tablet) or a text button
+  beside the week heading (List view): a dialog
+  that previews "Will fill N empty days; M already assigned days are kept", with `Also replace assigned days`
+  (off by default), then `Apply`. Only days after that week are filled.
+
+Component inventory: `FeedingSchedulePage`, `FeedingCalendar` (with `FeedingDayCell`), `FeedingDayDialog`,
+`FeedingTotalsPanel`, `FeedingNotesBlock`, `RepeatWeekDialog`. Copy is in `app/src/strings.ts` under
+`// Feeding Schedule (T-034)`.

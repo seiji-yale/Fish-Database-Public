@@ -2,7 +2,7 @@
 
 |                  |                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------ |
-| State            | Draft                                                                                |
+| State            | Review                                                                               |
 | Size             | L                                                                                    |
 | Phase            | 5 (Feeding Schedule & restricted view)                                               |
 | Depends on       | T-033 (and T-032 for the restricted shell; rebase on whichever merges second)        |
@@ -104,3 +104,25 @@ two taps by Feeders, Members and Admins, with month totals, history per day and 
 ## Review Log
 
 <!-- Append Step Reports, Step Reviews, Ticket Review, Owner feedback here, newest at the bottom. -->
+
+### Steps 1 to 5 — 2026-10-26 — implementer
+
+- Step 1 and 2: `/feeding` (`FeedingSchedulePage`), `feedingApi.ts`, `feedingView.ts` (URL, unassigned rule, local totals, linker; unit-tested), `FeedingCalendar` with `FeedingDayCell` (a `<table>` with column headers; every day a button with an accessible name; `Today`, `Unassigned` and the note mark are words or marks, not colour), `FeedingTotalsPanel`, `FeedingNotesBlock` (read side). Dashboard fourth button and the account-menu first item appear by `can('feeding.read')`; a Guest gets the standard Not available screen. The calendar takes the full window width (`.content-container:has(.feeding-page)`), otherwise names were cut off on a laptop. Phones: seven compact columns with truncated names and a dot for events; `Grid | List` (`?view=list`); every cell is at least 44 px tall (tested at the three widths).
+- Step 3: `FeedingDayDialog` on `Modal`: feeder select, note with counter, `Last changed by`, `Show history` (loaded when opened), clearing through `ConfirmDialog`, 409 with the server's wording and `Reload this day`, 400 mapped to one message. Focus returns to the day (tested).
+- Step 4: `RepeatWeekDialog`: a dry run on open and whenever the checkbox changes, Apply disabled until the counts are in, a toast with the result; the week menu is a `⋯` `RowMenu` (desktop, tablet) or a button beside the week heading (List).
+- Step 5: `04-ui-spec.md` section 8, glossary (Feeding Schedule, Assignment, Schedule event). The ticket also names `user-guide.md` and `01-requirements.md` notes; the user guide does not exist in this public repository, and the FR-GLB-01 / FR-DASH-06 text lives in `docs/08-feeding-schedule-and-guest-access.md`, which already states both entries.
+- Tests: `app/src/feedingView.test.ts`; `tests/e2e/feeding.spec.ts` (navigation, October 2026 layout, URL, Today, Unassigned, List view, Guest) and `feeding.write.spec.ts` (set, change, clear with confirmation, history, conflict between two people, Repeat this week), each at 375 / 768 / 1280 px, in months of their own so the three projects do not meet.
+- Deviations: (1) the cell and totals are updated from the server's answer to the save (a few milliseconds) rather than before it, so a refused save never flickers; (2) the event labels show in the cell, but the events section of the dialog arrives with T-037; (3) `Export` and the print view arrive with T-035, so the page head has only `Today`; (4) a person who is no longer active but still holds the day appears in the select as `Name (not active)` so the day does not look empty; saving that person again is refused by the server (BR-14).
+- Checks: `npm run check`, `check:public` green; the whole browser suite (`playwright test`) green on the final build.
+- For the owner (preview, phone and laptop): acceptance 1 to 6 of this ticket.
+
+### Owner feedback on the first preview — 2026-10-26
+
+Acceptance went as expected; four changes were asked for and made:
+
+1. **Navigation:** a Feeding Schedule link in the header (top navigation, and the phone tab bar) for roles with `feeding.read`. On tablets the header link gap is a little smaller so the long-app-name layout still fits.
+2. **Upright screens:** the totals (and Notes & links) sit under the calendar unless the window is at least 1024 px wide **and** landscape, so the calendar keeps the whole width.
+3. **Repeat this week:** the week row's `⋯` menu is now a circular-arrow icon button (name and tooltip `Repeat this week… (Week of …)`); the List view keeps its text button.
+4. **Month box:** the visible `Month Year` heading next to the month box is gone (it stays for screen readers); the box itself names the month. On a phone Previous, the box and Next share one row.
+
+E2E added: the header link at each width, one month box, totals under the calendar when upright (a 1024 x 1366 window) and beside it when landscape. Full browser suite green (388 tests).
