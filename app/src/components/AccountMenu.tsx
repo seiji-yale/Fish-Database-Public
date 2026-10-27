@@ -71,6 +71,11 @@ export function AccountMenu({
         {user.role === 'feeder' ? <span className="chip">{strings.roleFeeder}</span> : null}
       </summary>
       <ul className="account-menu__list">
+        {acting.can('feeding.read') ? (
+          <li>
+            <a href="/feeding">{strings.feedingSchedule}</a>
+          </li>
+        ) : null}
         {acting.can('admin.*') ? (
           <li>
             <a href="/settings">{strings.settings}</a>

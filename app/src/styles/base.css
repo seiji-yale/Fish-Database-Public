@@ -2653,3 +2653,291 @@ a.button--primary:hover {
 .file-list li {
   align-items: flex-start;
 }
+
+/* Feeding Schedule (T-034) */
+/* A calendar needs the width: names must fit in the cells on a laptop. */
+.content-container:has(.feeding-page) {
+  max-width: none;
+}
+.feeding-page {
+  display: grid;
+  gap: var(--space-3);
+}
+.feeding-page__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.feeding-page__head h1 {
+  margin: 0;
+}
+.feeding-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.feeding-nav__month {
+  margin: 0 var(--space-2);
+  font-size: 1.25rem;
+}
+.feeding-nav__picker {
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.feeding-nav button {
+  min-height: 44px;
+}
+.feeding-view-toggle {
+  display: none;
+}
+.feeding-layout {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+.feeding-grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.feeding-grid th,
+.feeding-grid td {
+  padding: 0;
+  border: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.feeding-grid th {
+  padding: var(--space-1);
+  background: var(--color-surface-tint);
+  font-size: 0.8rem;
+}
+.feeding-grid__blank {
+  background: #f6f6f6;
+}
+.feeding-grid__actions {
+  width: 2.75rem;
+  text-align: center;
+  vertical-align: middle;
+}
+.feeding-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-1);
+  border: 0;
+  border-radius: 0;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+div.feeding-cell {
+  cursor: default;
+}
+.feeding-cell:hover {
+  background: var(--color-surface-tint);
+}
+.feeding-cell__day {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-weight: 700;
+}
+.feeding-cell__who,
+.feeding-cell__event {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.feeding-cell--today {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+.feeding-cell__today {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius);
+  background: var(--color-focus);
+  color: white;
+  font-size: 0.65rem;
+}
+.feeding-cell--soon .feeding-cell__who {
+  color: #7a4400;
+  font-weight: 700;
+}
+.feeding-cell--soon {
+  box-shadow: inset 0 0 0 2px #b45309;
+}
+.feeding-cell__event {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+}
+.feeding-cell__event-label {
+  display: none;
+}
+.feeding-list {
+  display: none;
+}
+.feeding-list section {
+  margin-bottom: var(--space-3);
+}
+.feeding-list__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.feeding-list__heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.feeding-list ul {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.feeding-row {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  border-top-width: 0;
+  background: var(--color-surface);
+  font: inherit;
+  text-align: left;
+}
+.feeding-list li:first-child .feeding-row {
+  border-top-width: 1px;
+}
+.feeding-list li.is-today .feeding-row {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+.feeding-row--soon {
+  color: #7a4400;
+  font-weight: 700;
+}
+.feeding-totals,
+.feeding-notes {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.feeding-totals h2,
+.feeding-notes h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.05rem;
+}
+.feeding-totals ul {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+.feeding-totals li {
+  margin-bottom: var(--space-1);
+}
+.feeding-notes p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.feeding-dialog {
+  display: grid;
+  gap: var(--space-3);
+}
+.feeding-dialog select,
+.feeding-dialog input[type='text'] {
+  width: 100%;
+  min-height: 44px;
+}
+.feeding-dialog__problem {
+  padding: var(--space-2) var(--space-3);
+  border-left: 4px solid #b3261e;
+  background: #fdecea;
+}
+.feeding-dialog__problem p {
+  margin: 0 0 var(--space-2);
+}
+.feeding-dialog__meta {
+  margin: 0;
+  color: var(--color-muted);
+}
+.feeding-dialog__history summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.feeding-history {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+.feeding-history li {
+  margin-bottom: var(--space-2);
+}
+.feeding-history__replaced {
+  color: var(--color-muted);
+}
+/* Phone: a 7-column grid of compact cells, or the List view. */
+@media (max-width: 639px) {
+  .feeding-view-toggle {
+    display: block;
+  }
+  .feeding-page[data-view='list'] .feeding-grid {
+    display: none;
+  }
+  .feeding-page[data-view='list'] .feeding-list {
+    display: block;
+  }
+  .feeding-grid__actions {
+    display: none;
+  }
+  .feeding-cell__who {
+    font-size: 0.7rem;
+  }
+  .feeding-cell__today {
+    display: none;
+  }
+  .feeding-cell--today .feeding-cell__day::after {
+    content: '•';
+  }
+}
+@media (min-width: 640px) {
+  .feeding-cell {
+    min-height: 72px;
+    padding: var(--space-2);
+    font-size: 0.9rem;
+  }
+  .feeding-cell__who {
+    font-size: 1rem;
+  }
+  .feeding-cell__event-label {
+    display: inline;
+  }
+  .feeding-cell__event-dot {
+    display: none;
+  }
+  .feeding-grid th {
+    font-size: 0.9rem;
+  }
+}
+@media (min-width: 1024px) {
+  .feeding-layout {
+    grid-template-columns: minmax(0, 1fr) 17rem;
+    align-items: start;
+  }
+  .feeding-layout__notes {
+    grid-column: 1 / -1;
+  }
+}
