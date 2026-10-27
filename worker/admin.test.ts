@@ -496,12 +496,14 @@ describe('Export now (acceptance 4)', () => {
       'chat_messages.csv',
       'cryo_records.csv',
       'cryo_vial_uses.csv',
+      'feeding_assignments.csv',
       'fish-database.json',
       'genotyping_records.csv',
       'id_protocols.csv',
       'line_references.csv',
       'line_versions.csv',
       'lines.csv',
+      'schedule_events.csv',
       'users.csv',
     ]);
     const text = (name: string) => new TextDecoder().decode(files.get(name));

@@ -300,3 +300,37 @@ export interface ImportRunRow {
   report_md: string | null;
   row_count: number | null;
 }
+
+/**
+ * One value of one day of the Feeding Schedule (migration 0014, BR-13). Append-only: a change inserts a
+ * new row and sets `replaced_at/replaced_by` on the previous one; the current value has `replaced_at` NULL.
+ */
+export interface FeedingAssignmentRow {
+  id: string;
+  /** Lab calendar date, `YYYY-MM-DD`. */
+  date: string;
+  user_id: string;
+  note: string | null;
+  /** Traceability of the one-time Google Sheet import (T-036); NULL for app writes. */
+  imported_from: string | null;
+  created_at: string;
+  created_by: string;
+  replaced_at: string | null;
+  replaced_by: string | null;
+}
+
+/** An entry of the schedule other than feeding (migration 0014, BR-19). Soft-deleted only. */
+export interface ScheduleEventRow {
+  id: string;
+  date: string;
+  /** NULL for a one-off; the same value on every row of one weekly repeat. */
+  series_id: string | null;
+  title: string;
+  note: string | null;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
+}

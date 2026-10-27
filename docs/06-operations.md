@@ -9,6 +9,12 @@ The optional mirror writes JSON, CSV, images, logs, and a standalone HTML snapsh
 folder. A scheduled Worker runs it when configured. Configure each environment separately and verify
 the target folder before enabling the schedule.
 
+`latest/` holds `fish-database.json` (everything, including history and removed items) and one CSV per
+table: `lines.csv`, `id_protocols.csv`, `genotyping_records.csv`, `cryo_records.csv`, `cryo_vial_uses.csv`,
+`line_references.csv`, `attachments.csv`, `chat_messages.csv`, `line_versions.csv`, `users.csv`,
+`feeding_assignments.csv` and `schedule_events.csv` (the Feeding Schedule with every earlier value of a
+day). `tools/import/restore_from_export.py` restores all of it from `fish-database.json`.
+
 ## 2. Backup and recovery
 
 Export D1 and R2 before production migration. Rehearse restoration in preview, verify records and

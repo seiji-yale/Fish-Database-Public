@@ -4,6 +4,7 @@ import type {
   AttachmentRow,
   ChatMessageRow,
   CryoRecordRow,
+  FeedingAssignmentRow,
   GenotypingRecordRow,
   IdProtocolRow,
   LineAttributeRow,
@@ -11,6 +12,7 @@ import type {
   LineReferenceRow,
   LineRow,
   LineVersionRow,
+  ScheduleEventRow,
 } from '../types';
 
 /** Ids of the seeded users (0002_seed_users.sql). */
@@ -213,6 +215,40 @@ export function makeChatMessage(overrides: Partial<ChatMessageRow> = {}): ChatMe
     edited_at: null,
     deleted_at: null,
     created_at: T0,
+    ...overrides,
+  };
+}
+
+export function makeFeedingAssignment(
+  overrides: Partial<FeedingAssignmentRow> = {},
+): FeedingAssignmentRow {
+  return {
+    id: '01H0000000000000000000FA01',
+    date: '2026-10-09',
+    user_id: USER_ID.alice,
+    note: null,
+    imported_from: null,
+    created_at: T0,
+    created_by: USER_ID.bob,
+    replaced_at: null,
+    replaced_by: null,
+    ...overrides,
+  };
+}
+
+export function makeScheduleEvent(overrides: Partial<ScheduleEventRow> = {}): ScheduleEventRow {
+  return {
+    id: '01H0000000000000000000SE01',
+    date: '2026-10-12',
+    series_id: null,
+    title: 'Test Water Quality',
+    note: null,
+    created_at: T0,
+    created_by: USER_ID.bob,
+    updated_at: T0,
+    updated_by: USER_ID.bob,
+    deleted_at: null,
+    deleted_by: null,
     ...overrides,
   };
 }

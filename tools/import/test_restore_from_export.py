@@ -236,3 +236,70 @@ def test_wipe_removes_references_before_the_attachments_they_point_at(export):
     assert table_count(db, "line_references") == wanted["line_references"]
     assert table_count(db, "attachments") == wanted["attachments"] == 1
     assert rows(db, "PRAGMA foreign_key_check") == []
+
+
+def with_schedule(export: dict) -> dict:
+    """The fixture export plus a small Feeding Schedule: a replaced value, its replacement, a day, an event."""
+    user_ids = [u["id"] for u in export["users"]]
+    first, second = user_ids[0], user_ids[1]
+    assignment = {
+        "id": "FA1", "date": "2026-10-09", "user_id": first, "note": "cover", "imported_from": None,
+        "created_at": "2026-10-01T00:00:00Z", "created_by": second,
+        "replaced_at": "2026-10-02T00:00:00Z", "replaced_by": second,
+    }
+    return {
+        **export,
+        "feedingAssignments": [
+            assignment,
+            {**assignment, "id": "FA2", "user_id": second, "note": None, "created_at": "2026-10-02T00:00:00Z",
+             "replaced_at": None, "replaced_by": None},
+            {**assignment, "id": "FA3", "date": "2026-10-10", "replaced_at": None, "replaced_by": None},
+        ],
+        "scheduleEvents": [
+            {
+                "id": "SE1", "date": "2026-10-12", "series_id": None, "title": "Inspection", "note": None,
+                "created_at": "2026-10-01T00:00:00Z", "created_by": first, "updated_at": "2026-10-01T00:00:00Z",
+                "updated_by": first, "deleted_at": None, "deleted_by": None,
+            }
+        ],
+        "settings": {**export["settings"], "feeding_schedule_notes": "Rota: https://example.test"},
+    }
+
+
+def test_the_feeding_schedule_is_restored_with_its_history_and_notes(export):
+    doc = with_schedule(export)
+    assert restore.counts(doc)["feeding_assignments"] == 3
+    assert restore.counts(doc)["schedule_events"] == 1
+    db = fresh_db()
+    run_statements(db, restore.build_statements(doc, wipe=False))
+    assert rows(db, "SELECT * FROM feeding_assignments ORDER BY id") == doc["feedingAssignments"]
+    assert rows(db, "SELECT * FROM schedule_events") == doc["scheduleEvents"]
+    assert rows(db, "PRAGMA foreign_key_check") == []
+    notes = {r["key"]: r["value"] for r in rows(db, "SELECT * FROM settings")}["feeding_schedule_notes"]
+    assert notes == "Rota: https://example.test"
+
+
+def test_wipe_clears_the_schedule_before_restoring_it_again(export):
+    doc = with_schedule(export)
+    db = fresh_db()
+    run_statements(db, restore.build_statements(doc, wipe=False))
+    db.execute("UPDATE feeding_assignments SET note = 'changed after the export'")
+    run_statements(db, restore.build_statements(doc, wipe=True))
+    assert table_count(db, "feeding_assignments") == 3
+    assert rows(db, "SELECT count(*) AS n FROM feeding_assignments WHERE note = 'changed after the export'")[0]["n"] == 0
+
+
+def test_an_export_from_before_the_schedule_restores_with_empty_lists(export):
+    old = {k: v for k, v in export.items() if k not in ("feedingAssignments", "scheduleEvents")}
+    assert restore.counts(old)["feeding_assignments"] == 0
+    db = fresh_db()
+    run_statements(db, restore.build_statements(old, wipe=False))
+    assert table_count(db, "feeding_assignments") == 0
+    assert table_count(db, "schedule_events") == 0
+
+
+def test_a_damaged_schedule_list_is_refused(export):
+    with pytest.raises(restore.RestoreError, match="feedingAssignments"):
+        restore.validate({**export, "feedingAssignments": [{"date": "2026-10-09"}]})
+    with pytest.raises(restore.RestoreError, match="scheduleEvents"):
+        restore.validate({**export, "scheduleEvents": "nope"})

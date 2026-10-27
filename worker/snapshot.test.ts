@@ -25,6 +25,8 @@ function sample(): ExportDocument {
     lineVersions: [],
     activities: [],
     chatMessages: [],
+    feedingAssignments: [],
+    scheduleEvents: [],
     settings: {
       upcoming_breeding_months: null,
       default_annealing_c: null,

@@ -8,6 +8,8 @@
 import pkg from '../../package.json';
 import type { Db } from '../db/db';
 import { listEnumerations } from '../db/queries/enumerations';
+import { FEEDING_ASSIGNMENTS } from '../db/queries/feedingAssignments';
+import { SCHEDULE_EVENTS } from '../db/queries/scheduleEvents';
 import { getSetting } from '../db/queries/settings';
 import { listUsers, withoutSecrets } from '../db/queries/users';
 import { buildLineListCsv } from '../lib/lineList';
@@ -16,6 +18,18 @@ import { exportSchema, type ExportDocument } from './schema';
 import { createZip } from './zip';
 
 type Row = Record<string, unknown>;
+
+/** CSV column -> the id column it names, for the Feeding Schedule files. */
+const FEEDING_NAMES = {
+  user_name: 'user_id',
+  created_by_name: 'created_by',
+  replaced_by_name: 'replaced_by',
+};
+const EVENT_NAMES = {
+  created_by_name: 'created_by',
+  updated_by_name: 'updated_by',
+  deleted_by_name: 'deleted_by',
+};
 
 async function table(db: Db, name: string, orderBy: string): Promise<Row[]> {
   // `name` and `orderBy` are literals from this file, never user input.
@@ -58,11 +72,14 @@ export async function buildExportFiles(
     messagesRows,
     versions,
     activityRows,
+    feedingRows,
+    eventRows,
     users,
     enumerations,
     threshold,
     annealing,
     cycles,
+    feedingNotes,
   ] = await Promise.all([
     table(db, 'lines', 'name COLLATE NOCASE, id'),
     table(db, 'line_phenotypes', 'line_id, sort_order, id'),
@@ -76,6 +93,8 @@ export async function buildExportFiles(
     table(db, 'chat_messages', 'created_at, id'),
     table(db, 'line_versions', 'line_id, version_no'),
     table(db, 'activities', 'created_at, id'),
+    table(db, 'feeding_assignments', 'date, created_at, id'),
+    table(db, 'schedule_events', 'date, created_at, id'),
     listUsers(db, { includeInactive: true }).then((rows) => rows.map(withoutSecrets)),
     Promise.all(
       (
@@ -85,6 +104,7 @@ export async function buildExportFiles(
     getSetting(db, 'upcoming_breeding_months'),
     getSetting(db, 'default_annealing_c'),
     getSetting(db, 'default_cycles'),
+    getSetting(db, 'feeding_schedule_notes'),
   ]);
 
   const byLine = {
@@ -129,10 +149,13 @@ export async function buildExportFiles(
     lineVersions: versions,
     activities: activityRows,
     chatMessages: messagesRows,
+    feedingAssignments: feedingRows,
+    scheduleEvents: eventRows,
     settings: {
       upcoming_breeding_months: threshold,
       default_annealing_c: annealing,
       default_cycles: cycles,
+      feeding_schedule_notes: feedingNotes,
     },
   };
 
@@ -162,6 +185,28 @@ export async function buildExportFiles(
     );
   };
 
+  // The schedule CSVs name the people next to their ids (docs/03-data-model.md section 6).
+  const userName = new Map(users.map((user) => [user.id, user.name]));
+  const namedHeaders = (columns: readonly string[], names: Record<string, string>): string[] =>
+    Object.keys(
+      named([Object.fromEntries(columns.map((column) => [column, null]))], names)[0] ?? {},
+    );
+  const named = (rows: readonly Row[], columns: Record<string, string>): Row[] =>
+    rows.map((row) =>
+      Object.fromEntries(
+        Object.entries(row).flatMap(([key, value]) => {
+          const label = Object.entries(columns).find(([, source]) => source === key)?.[0];
+          const name = typeof value === 'string' ? (userName.get(value) ?? null) : null;
+          return label === undefined
+            ? [[key, value]]
+            : [
+                [key, value],
+                [label, name],
+              ];
+        }),
+      ),
+    );
+
   return {
     json,
     csvs: {
@@ -175,6 +220,14 @@ export async function buildExportFiles(
       'chat_messages.csv': plain(messagesRows, ['id']),
       'line_versions.csv': plain(versions, ['id'], ['snapshot']),
       'users.csv': plain(users, ['id']),
+      'feeding_assignments.csv': plain(
+        named(feedingRows, FEEDING_NAMES),
+        namedHeaders(FEEDING_ASSIGNMENTS.columns, FEEDING_NAMES),
+      ),
+      'schedule_events.csv': plain(
+        named(eventRows, EVENT_NAMES),
+        namedHeaders(SCHEDULE_EVENTS.columns, EVENT_NAMES),
+      ),
     },
   };
 }

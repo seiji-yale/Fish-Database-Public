@@ -20,6 +20,41 @@ protocol they are `sequence_result`, on a reference they are `reference_file`. T
 are our own names (`application/x-abif`, `text/x-fasta`, `text/x-sequence`) because browsers report
 no usable type; they are always served as downloads.
 
+## 3. Feeding Schedule
+
+Migration `0014_feeding_schedule.sql` (T-033) adds two tables. Dates are lab calendar dates
+(`YYYY-MM-DD`, `America/New_York`), checked to be real dates from 2000-01-01 to 2100-12-31.
+
+`feeding_assignments` holds who feeds on a day, and is append-only (BR-13, BR-7):
+
+| column        | notes                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| id            | TEXT primary key                                                                               |
+| date          | the day                                                                                        |
+| user_id       | the feeder (FK `users`)                                                                        |
+| note          | optional, at most 200 characters                                                               |
+| imported_from | where the one-time Google Sheet import found it (T-036); NULL for app writes                   |
+| created_at    | when this value was set                                                                        |
+| created_by    | who set it (FK `users`)                                                                        |
+| replaced_at   | NULL for the current value of the day; set when a newer row replaces it, or the day is cleared |
+| replaced_by   | who replaced or cleared it (FK `users`)                                                        |
+
+`UNIQUE INDEX feeding_current_day ON feeding_assignments (date) WHERE replaced_at IS NULL` allows one
+current row per date; it is also the lock that makes two simultaneous saves of one day impossible (the
+second insert fails and the API answers 409 `DAY_CHANGED`). A change closes the current row and inserts
+the new one in one `db.batch`; clearing a day only closes it. The full history of a day is
+`SELECT … WHERE date = ? ORDER BY created_at`. No `activities` row is written.
+
+`schedule_events` holds other entries of the schedule (BR-19): `id`, `date`, `series_id` (NULL for a
+one-off; the same value on every row of one weekly repeat), `title` (1 to 60 characters), `note` (at most
+200), `created_at/by`, `updated_at/by`, `deleted_at/by`. A weekly repeat is one row per occurrence.
+Edits change title and note in place (no before/after history) and never clear `series_id`; deleting is
+soft. Indexes: `(date)` and `(series_id, date)`.
+
+The setting `feeding_schedule_notes` (plain text, at most 2000 characters) has no seed row.
+
+People who can be assigned (BR-14) are active users whose role is `admin`, `member` or `feeder`.
+
 ## 5. Users and roles
 
 `users.role` is one of `admin`, `member`, `feeder`, `guest` (CHECK). Migration `0013_feeder_role.sql`
@@ -34,6 +69,14 @@ and indexes are unchanged. Rehearse any future rebuild on a copy of production f
 
 The JSON and CSV export builders live in `worker/export/`. The JSON schema is defined in
 `worker/export/schema.ts`. Exports omit authentication secrets.
+
+The Feeding Schedule is exported whole: `feedingAssignments` and `scheduleEvents` in the JSON (every row,
+replaced and deleted ones included, like `lineVersions`) and `settings.feeding_schedule_notes`. Older
+exports without them restore with empty lists. The mirror and the ZIP also carry `feeding_assignments.csv`
+(`id, date, user_id, user_name, note, imported_from, created_at, created_by, created_by_name,
+replaced_at, replaced_by, replaced_by_name`) and `schedule_events.csv` (all columns plus
+`created_by_name`, `updated_by_name`, `deleted_by_name`). `tools/import/restore_from_export.py` restores
+both tables and the setting.
 
 ## 7. Write order
 

@@ -34,6 +34,11 @@ export const messages = {
     'This version cannot be restored because its content is not in a known format. Ask the Admin.',
   versionConflict: (changedBy: string, changedAt: string) =>
     `This line was changed by ${changedBy} at ${changedAt} — reload to see the changes.`,
+  dayChanged: (changedBy: string, changedAt: string) =>
+    `This day was changed by ${changedBy} at ${changedAt}. Reload to see the change, then try again.`,
+  feedingUserNotAssignable:
+    'Choose an active Admin, Member or Feeder. A deactivated person must be reactivated first.',
+  scheduleEventNotFound: 'This event does not exist. Reload the page and try again.',
   userNotFoundAdmin: 'This user does not exist. Reload the page and try again.',
   listValueNotFound: 'This list entry does not exist. Reload the page and try again.',
   deletedNotFound: 'This deleted item no longer exists or was already restored. Reload the list.',

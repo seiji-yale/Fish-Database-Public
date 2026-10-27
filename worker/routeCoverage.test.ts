@@ -8,7 +8,7 @@
  * - `full`      full readers only (Member, Admin): Guests and Feeders get 403
  * - `write`     needs `lines.write` or `chat.write`: Guests and Feeders get 403
  * - `roster`    needs `users.list`: Guests get 403
- * - `feeding`   Feeding Schedule routes (T-033 onward adds its rows)
+ * - `feeding`   Feeding Schedule routes (`feeding.read` / `feeding.write`): Guests get 403
  * - `admin`     Admin only: everyone else gets 403
  */
 import { describe, expect, it } from 'vitest';
@@ -92,6 +92,13 @@ const ROUTES: Record<string, RouteClass> = {
   'DELETE /api/messages/:mid/read': 'full',
   'GET /api/messages/unread-count': 'full',
   'POST /api/messages/read-all': 'full',
+  'GET /api/feeding': 'feeding',
+  'GET /api/feeding/days/:date/history': 'feeding',
+  'PUT /api/feeding/days/:date': 'feeding',
+  'POST /api/feeding/repeat-week': 'feeding',
+  'POST /api/feeding/events': 'feeding',
+  'PATCH /api/feeding/events/:id': 'feeding',
+  'DELETE /api/feeding/events/:id': 'feeding',
 };
 
 const registered = (): string[] =>
@@ -111,9 +118,10 @@ const BODIES: Record<string, unknown> = {
 };
 
 type Who = 'Guest' | 'Feeder One' | 'Bob' | 'Admin';
-const ALLOWED: Record<Exclude<RouteClass, 'open' | 'feeding'>, Who[]> = {
+const ALLOWED: Record<Exclude<RouteClass, 'open'>, Who[]> = {
   overview: ['Guest', 'Feeder One', 'Bob', 'Admin'],
   roster: ['Feeder One', 'Bob', 'Admin'],
+  feeding: ['Feeder One', 'Bob', 'Admin'],
   full: ['Bob', 'Admin'],
   write: ['Bob', 'Admin'],
   admin: ['Admin'],
@@ -132,7 +140,7 @@ describe.each<Who>(['Guest', 'Feeder One', 'Bob', 'Admin'])('as %s', (who) => {
     await s.actAs(who);
     const wrong: string[] = [];
     for (const [key, routeClass] of Object.entries(ROUTES)) {
-      if (routeClass === 'open' || routeClass === 'feeding') continue;
+      if (routeClass === 'open') continue;
       const [method = '', template = ''] = key.split(' ');
       const path = template.replace(/:[A-Za-z]+/g, 'x');
       const response =
