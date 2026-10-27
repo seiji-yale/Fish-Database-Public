@@ -2728,7 +2728,8 @@ a.button--primary:hover {
 .feeding-grid__blank {
   background: #f6f6f6;
 }
-.feeding-grid__actions {
+.feeding-grid th.feeding-grid__actions,
+.feeding-grid td.feeding-grid__actions {
   width: 3rem;
   text-align: center;
   vertical-align: middle;

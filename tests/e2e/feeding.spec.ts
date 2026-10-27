@@ -145,3 +145,19 @@ test('held upright the totals sit under the calendar; held wide they sit beside 
   const calendar = await page.locator('.feeding-grid').boundingBox();
   expect(upright?.y ?? 0).toBeGreaterThan((calendar?.y ?? 0) + (calendar?.height ?? 0) - 1);
 });
+
+test('the Repeat this week button sits in the middle of its week row', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name.startsWith('phone'), 'phones use the List view for this action');
+  await page.goto('/feeding?month=2026-10');
+  const row = page.locator('.feeding-grid tbody tr').nth(1);
+  const cell = await row.locator('td.feeding-grid__actions').boundingBox();
+  const button = await row.getByRole('button', { name: /Repeat this week/ }).boundingBox();
+  const middle = (box: { x: number; y: number; width: number; height: number } | null) => ({
+    x: (box?.x ?? 0) + (box?.width ?? 0) / 2,
+    y: (box?.y ?? 0) + (box?.height ?? 0) / 2,
+  });
+  expect(Math.abs(middle(button).x - middle(cell).x)).toBeLessThan(2);
+  expect(Math.abs(middle(button).y - middle(cell).y)).toBeLessThan(2);
+});
