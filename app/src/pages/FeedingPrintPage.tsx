@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { monthGrid, weekdayName } from '../../../domain/feeding';
 import { formatDateTime } from '../dateFormat';
 import { getFeedingMonth, type FeedingMonth } from '../feedingApi';
-import { readFeedingUrl } from '../feedingView';
+import { feedingHref, readFeedingUrl } from '../feedingView';
 import { strings } from '../strings';
 import { useActingUser } from '../useActingUser';
 import { NotAvailablePage } from './NotAvailablePage';
@@ -43,6 +43,9 @@ function PrintMonth({
   return (
     <main className="print-view feeding-print">
       <header className="print-header">
+        <a className="print-return" href={feedingHref(data.month, 'grid')}>
+          <span aria-hidden="true">{strings.backToLinesIcon}</span> {strings.feedingPrintReturn}
+        </a>
         <p>{strings.appName}</p>
         <h1>{strings.feedingPrintTitle(monthTitle(data.month))}</h1>
       </header>

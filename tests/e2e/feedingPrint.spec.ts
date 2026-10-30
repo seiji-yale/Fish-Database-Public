@@ -61,6 +61,14 @@ test('the print view shows the month with names in full, the totals and a footer
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBeLessThanOrEqual(0);
+
+  // A link back to the schedule (owner feedback, 2026-10-30): this route has no app shell to
+  // navigate from, so closing the print dialog would otherwise leave a dead page behind.
+  const returnLink = page.getByRole('link', { name: 'Back to Feeding Schedule' });
+  await expect(returnLink).toHaveAttribute('href', '/feeding?month=2026-10');
+  await expect(returnLink).toBeVisible();
+  await page.emulateMedia({ media: 'print' });
+  await expect(returnLink).toBeHidden();
 });
 
 test.describe('the Guest view', () => {

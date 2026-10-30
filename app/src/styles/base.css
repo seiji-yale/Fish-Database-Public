@@ -1700,6 +1700,17 @@ a.button--primary:hover {
   border-top: 1px solid var(--color-border);
   font-size: 0.8rem;
 }
+.print-return {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+  font-weight: 700;
+  text-decoration: none;
+}
+.print-return:hover {
+  text-decoration: underline;
+}
 @page {
   size: auto;
   margin: 0.5in;
@@ -1714,6 +1725,9 @@ a.button--primary:hover {
   .print-view {
     max-width: none;
     padding: 0;
+  }
+  .print-return {
+    display: none;
   }
   .print-header,
   .print-section,
