@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { hasFeedingHome } from '../../../domain/permissions';
 import { DashboardIcon, type DashboardIconName } from '../components/DashboardIcon';
 import { HeaderSearch } from '../components/HeaderSearch';
 import { Modal } from '../components/Modal';
 import { EmptyState, Skeleton } from '../components/shared';
 import { formatDate, formatDateTime, formatRelativeTime } from '../dateFormat';
+import { FeedingSchedulePage } from './FeedingSchedulePage';
 import {
   getDashboard,
   getMoreActivities,
@@ -142,11 +144,6 @@ function RestrictedDashboard({ data }: { data: RestrictedDashboardResponse }) {
         <a className="button--primary" href="/lines?view=all">
           {strings.seeAllLines}
         </a>
-        {acting.can('feeding.read') ? (
-          <a className="button--primary" href="/feeding">
-            {strings.feedingSchedule}
-          </a>
-        ) : null}
       </nav>
     </div>
   );
@@ -588,6 +585,13 @@ function DashboardContent({ initial }: { initial: DashboardResponse }) {
 }
 
 export function DashboardPage() {
+  const acting = useActingUser();
+  // Feeder's home is the Feeding Schedule itself, not an overview page with a link to it.
+  if (hasFeedingHome(acting.role)) return <FeedingSchedulePage />;
+  return <DashboardData />;
+}
+
+function DashboardData() {
   const [data, setData] = useState<DashboardResponse | RestrictedDashboardResponse | null>(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);

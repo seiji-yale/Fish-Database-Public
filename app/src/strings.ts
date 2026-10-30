@@ -835,6 +835,7 @@ export const strings = {
   feedingExportMenu: 'Export',
   feedingExportCsv: 'Export as CSV',
   feedingExportPdf: 'Export as PDF',
+  feedingPrintReturn: 'Back to Feeding Schedule',
   feedingRepeatWeek: 'Repeat this week…',
   feedingRepeatTitle: (weekStart: string) => `Repeat the week of ${weekStart}`,
   feedingRepeatIntro: (month: string) => `Fill the rest of ${month} with this week's pattern.`,
