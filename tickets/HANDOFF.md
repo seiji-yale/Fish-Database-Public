@@ -1,53 +1,73 @@
-# Handoff — 2026-10-27 (night)
+# Handoff — 2026-10-30
 
 Read `AGENTS.md`, then this file, then `tickets/STATUS.md`. Replace this file when work stops for the day.
 
 ## State
 
-Work paused on 2026-10-27. PRs #13 to #18 are merged (T-033 API, T-034 page, T-035 export and notes, T-036 sheet import tool, T-037 events UI, and the handoffs). `main` is at e6336df. T-031 to T-040 are Done except **T-036 (Review)**: its Step 4, the production cut-over, has not happened.
+T-036's production cut-over is done. `main` is at 0f353e2. T-031 to T-040 are all Done.
 
-- **Production** still runs the first release (Worker 4a82b9a7, migration 0014, T-033 to T-035). It does **not** have T-037 (events UI) or T-036 (the `Provisional` mark in Settings > Users). Neither needs a migration: a deploy of `main` is enough, after the owner's confirmation.
-- **Preview** runs a local combined branch of T-036 and T-037 (d8f24c15), equal in content to `main`. The preview database holds the real sheet's days (297 days imported, 6 provisional users) from the rehearsal; redeploy it from `main` with `npm run deploy:preview`.
-- The owner accepted T-033 to T-035 on the preview. T-036 and T-037 were merged on the owner's word; the preview review of the provisional users and of the imported days was offered but not reported back.
-
-## The feeding sheet (private data)
-
-- The latest workbook (all 12 tabs of 2026 visible; downloaded 2026-10-27) is in the owner's private folder `~/Dropbox/Seiji/fish-database-private/feeding-sheet/2026-10-27/sheet.xlsx` (a copy is in `~/scratch/fish-feeding-sheet/2026-10-27/`). The preview rehearsal's report is next to it (`preview-report.md`). It holds real first names and a personal contact in the footer: never commit it, its reports or real names; tests use `Feeder One/Two/Three`.
-- If the owner changes the sheet again, download it again (`https://docs.google.com/spreadsheets/d/<id>/export?format=xlsx`; the id is in the owner's link, not recorded here) into a new dated folder.
-- Owner decisions: names in the sheet that are no users become **provisional users** (inactive Feeders without a password), on production too; an Admin decides in Settings > Users whether to reactivate or leave each one. The first-week template leftovers in **November and December 2026 are excluded and stay empty** (`--exclude "November2026!E7:I7" --exclude "December2026!E7:I7"`).
+- **Production** (`fdb-a1470c563d1d11f9b5c84faf`) now runs `main` (T-033 to T-037 included; deployed
+  2026-10-30, no migration needed). The Feeding Schedule sheet import was applied the same day (300
+  assignments written, 7 provisional users created; counts only — names stay in the owner's private
+  sheet folder, never this repo). The owner confirmed the three remaining manual steps are done:
+  visual compare + Export now on `/feeding?month=2026-10`, Settings > Users reactivation/invites,
+  Settings > Preferences footer and view-only sheet. The Feeding Schedule lane (T-033 to T-037) is
+  complete.
+- **T-041** (new, from owner feedback the same day): the Feeding Schedule PDF export left the browser
+  on a dead `/feeding/print` page with no way back, and the owner wanted Feeding Schedule to be a
+  Feeder's home page. Both fixed; see `tickets/T-041-feeder-home-and-print-return.md` for detail. On
+  branch `ticket/T-041-feeding-print-return`, **PR #20, not yet merged** — needs the owner's review on
+  the preview deploy first. All checks (`typecheck`, `lint`, `test`, `test:e2e` full suite,
+  `check:english`, `check:free-tier`, `check:python`, `check:public`) are clean on that branch.
+- **Preview** was redeployed from the T-041 branch (not `main`) for the owner to review that PR; its
+  database still holds the rehearsal's sheet import from before the cut-over, now stale with respect to
+  production. Redeploy preview from `main` (`npm run deploy:preview`) once T-041 merges, if the owner
+  wants preview's data to match production again (no migration either way).
 
 ## Next for the agent
 
-1. **Production cut-over (T-036 Step 4)**, only with the owner's confirmation at each production step (runbook: `docs/06-operations.md` section 5, tool: `docs/05-import-spec.md` section 8):
-   1. Deploy `main` to production (no migration): `npm run build && npx wrangler deploy --config wrangler.jsonc --env production`.
-   2. Dry run against production (read only): `npm run import:feeding -- <sheet.xlsx> --env production --create-missing-users --exclude "November2026!E7:I7" --exclude "December2026!E7:I7" --out <private folder>`. Show the owner the counts (per person and month, orphans, the provisional users that would be created, any production user whose name does not match: use `--alias`).
-   3. After the owner signs off the report: the same command with `--apply` (the owner types `production`), then open `/feeding?month=2026-10` and compare with the sheet, run **Export now**.
-   4. Owner: Settings > Users: reactivate the people who feed from now on and invite them; Settings > Preferences: paste the sheet's footer into Feeding Schedule notes and links (the emergency contact and links); make the sheet view-only.
-   5. Mark T-036 Done in `tickets/STATUS.md` (a docs PR).
-2. Phase 5 has no other open ticket. Ask the owner what comes next (the Feeding Schedule lane is complete once the cut-over is done).
+1. Ask the owner to review PR #20 (T-041) on the preview deploy. On their OK, merge it (PR merges: the
+   owner says so in the conversation), then redeploy preview from `main`.
+2. There is also an unmerged docs branch `docs/handoff-2026-10-30` (this file) — merge it whenever, it
+   only touches `tickets/`.
+3. No open ticket after T-041 merges. Ask the owner what comes next.
 
 ## Release policy (agreed with the owner, 2026-10-26)
 
-Do not hold finished tickets on branches until Phase 5 ends. One ticket, one branch, one PR; merge to `main` after owner acceptance on the preview and a green `check`. Deploy production at natural boundaries: T-032 and T-038 (both done, each alone), and the Feeding Schedule lane (T-033 to T-037) around T-034 and the T-036 cut-over, with a full rehearsal on a production copy before the cut-over. Merge unfinished user-visible work hidden (no link, role-gated) rather than keeping it on a branch. Deploy the shared preview from `main` or the ticket branch (the preview guard needs `origin/main` inside it), and redeploy it from `main` after the merge. Preview deploys (`npm run deploy:preview`, with `db:migrate:preview`) need no approval (owner, 2026-10-27). Production deploys, production migrations and any write to production data need the owner's confirmation each time. PR merges: the owner says so in the conversation (a general "merge and go on" counts for the PRs just discussed).
-
-## Next for the agent
-
-- **T-037** (events UI in the Day dialog: add, edit, remove, weekly repeat with a dry-run preview; the API exists since T-033) can start any time.
-- **T-036** (Google Sheet import tool and cut-over) touches production data: before starting, agree with the owner on where the exported .xlsx is, the months (2026-10 to 2026-12), and how sheet names map to app users; the runbook is `docs/08-feeding-schedule-and-guest-access.md` section 7.
-- Set a ticket Ready in `tickets/STATUS.md` before starting it; one ticket, one branch, one PR.
+Do not hold finished tickets on branches until Phase 5 ends. One ticket, one branch, one PR; merge to `main` after owner acceptance on the preview and a green `check`. Merge unfinished user-visible work hidden (no link, role-gated) rather than keeping it on a branch. Deploy the shared preview from `main` or the ticket branch (the preview guard needs `origin/main` inside it), and redeploy it from `main` after the merge. Preview deploys (`npm run deploy:preview`, with `db:migrate:preview`) need no approval (owner, 2026-10-27). Production deploys, production migrations and any write to production data need the owner's confirmation each time. PR merges: the owner says so in the conversation (a general "merge and go on" counts for the PRs just discussed).
 
 ## Notes and lessons
 
+- **This machine's default `node` is v20 (Anaconda's, on `PATH`), but Wrangler 4 requires Node 22+.**
+  `npx wrangler ...`, and anything that shells out to it (`tools/import/feeding/import_feeding.py` via
+  `d1_client.py`), fails with "Wrangler requires at least Node.js v22.0.0" otherwise. Node 22 is
+  installed via Homebrew but not linked: prepend it for any wrangler/build command —
+  `export PATH="/opt/homebrew/opt/node@22/bin:$PATH"` — for the rest of the shell session.
+- `POST/PATCH/DELETE /api/admin/*` all read the request body as JSON even when no fields are needed
+  (`readBody` in `worker/routes/admin.ts`): a bodyless `DELETE /api/admin/users/:id` fails with
+  `INVALID_INPUT`; send `{}`.
+- **Do not add a real `afterprint`-triggered auto-navigation on a print-only route.** It was tried for
+  T-041 (return to the app once the PDF/print dialog closes) but headless Chromium fires `afterprint`
+  immediately after `window.print()` rather than after a real dialog closes, so it broke
+  `tests/e2e/feedingEvents.write.spec.ts` (silently navigated away before the page could be read) and
+  would risk doing the same to a real user under some browser/OS print flow. A plain visible link,
+  hidden under `@media print`, is the reliable fix.
+- No e2e fixture signs in as a Feeder (only Guest, Admin, and the seeded members). Verifying
+  Feeder-only UI (`domain/permissions.hasFeedingHome` and its call sites) still needs a manual check
+  against a local `wrangler dev` build: create a temporary Feeder via `POST /api/admin/users`, activate
+  it with `POST /api/join/:inviteToken`, sign in, look, then deactivate and `DELETE` it. Adding a
+  feeder-role row to `tests/fixtures/users.sql` was considered and rejected: the Day dialog's "Feeder"
+  field (who feeds that day) already uses the existing member fixtures for assertions elsewhere, and a
+  new fixture user risks rippling into unrelated counts; a real fixture-based Feeder sign-in path is a
+  separate, bigger piece of work if it is wanted later.
 - Python tool modules under `tools/import/feeding/` are prefixed `feeding_` because `tools/import` has its own `reader.py` and `report.py`; test files must have unique names across `tools/`.
 - Stacked PRs (T-036 on main while T-037 was open) conflicted in `tickets/STATUS.md` and the end of `base.css` (both append blocks): merge `origin/main` locally, keep both sides, close the CSS braces, run `npm run build` and push.
 - A preview of two unmerged branches is a local, unpushed branch that merges both (the preview guard only needs `origin/main` inside it); delete it afterwards.
 - Real names never go into tests, docs or fixtures (the owner's sheet has real first names): use `Feeder One/Two/Three/Four`.
-
 - Lists ordered by `created_at` then `id` are not deterministic for rows made in the same second (ULID ids made in one millisecond order randomly): order by something meaningful (see `listAssignmentHistory`, `listEventsInRange`).
 - A stacked PR (T-035 on T-034) is merged in order; after the first merge, merge `origin/main` into the second branch locally (noreply identity) and wait for its CI again (about 5 to 12 minutes).
 - Recent Activity lists line events only, so a `settings_changed` entry is not shown on the Dashboard.
 - `npx playwright test <file>` still runs the whole suite on this machine (the web server step resets the database); it takes about a minute.
-
 - Agents can merge PRs only after the required check `check` passes on the PR head and the branch is up to date with `main`. Update a branch by merging `origin/main` locally with the noreply identity and pushing, not with GitHub's update-branch button (it would use the owner's account identity).
 - UI conventions from T-038: actions that look the same everywhere (upload, remove, copy, open, download, History) are icon buttons (`components/Icons.tsx`, an accessible name and a tooltip); removing a file asks first; a list of rows that carry a note sets each row off with a divider.
 - A full e2e run on the shared preview-less local server is parallel: after an upload the page reloads the line, so a spec that uploads twice in a row must wait for the first file to show before the second (a stale version gives 409).
