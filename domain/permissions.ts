@@ -59,6 +59,12 @@ export function isRestricted(role: UserRole): boolean {
   return !can(role, 'lines.read_full');
 }
 
+/** True only for Feeder today: the one restricted role with `feeding.read`, so its home is the
+ * Feeding Schedule rather than the overview Dashboard that Guests and full members get. */
+export function hasFeedingHome(role: UserRole): boolean {
+  return isRestricted(role) && can(role, 'feeding.read');
+}
+
 /** Roles an Admin may assign in Settings → Users (the built-in Guest is never assignable). */
 export const ASSIGNABLE_ROLES = [
   'admin',

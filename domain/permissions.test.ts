@@ -4,6 +4,7 @@ import {
   CAPABILITIES,
   can,
   capabilitiesOf,
+  hasFeedingHome,
   isRestricted,
   type Capability,
 } from './permissions';
@@ -48,6 +49,10 @@ describe('capability table', () => {
 
   it('isRestricted is true for Feeders and Guests only', () => {
     expect(ROLES.filter(isRestricted)).toEqual(['feeder', 'guest']);
+  });
+
+  it('hasFeedingHome is true for Feeders only', () => {
+    expect(ROLES.filter(hasFeedingHome)).toEqual(['feeder']);
   });
 
   it('Guests are never assignable', () => {

@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react';
-import type { Capability } from '../../../domain/permissions';
+import { hasFeedingHome, type Capability } from '../../../domain/permissions';
 import {
   APP_NAME_CHANGED,
   getSession,
@@ -35,9 +35,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const user = session?.user ?? null;
   /** What the signed-in role may do; the API enforces the same table (BR-15, FR-GUEST-01). */
   const can = (capability: Capability) => session?.capabilities.includes(capability) === true;
-  const visibleNavigation = navigation.filter(
-    (item) => item.capability === undefined || can(item.capability),
-  );
+  // Feeder's "/" already shows the Feeding Schedule (its home), so the separate "/feeding" link
+  // would just duplicate it: fold the two into the one entry, relabelled.
+  const feederHome = hasFeedingHome(user?.role ?? 'guest');
+  const visibleNavigation = navigation
+    .filter((item) => item.capability === undefined || can(item.capability))
+    .filter((item) => !feederHome || item.href !== '/feeding')
+    .map((item) =>
+      feederHome && item.href === '/' ? { ...item, label: strings.feedingSchedule } : item,
+    );
   const readsChat = can('chat.read');
 
   function loadSession(): void {
